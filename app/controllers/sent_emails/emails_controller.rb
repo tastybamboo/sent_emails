@@ -4,7 +4,9 @@ module SentEmails
   class EmailsController < ApplicationController
     layout "sent_emails/layouts/sent_emails"
 
-    before_action :set_email, only: [:show, :destroy, :resend]
+    rescue_from ActiveRecord::RecordNotFound, with: :email_not_found
+
+    before_action :set_email, only: [:show, :archive, :unarchive, :resend]
 
     def index
       @emails = Email.recent.with_events
@@ -21,15 +23,30 @@ module SentEmails
       @emails = paginate(@emails, per_page: 25)
     end
 
+    def archived
+      @emails = Email.archived.order(archived_at: :desc).with_events
+
+      if params[:q].present?
+        @emails = @emails.search(params[:q])
+      end
+
+      @emails = paginate(@emails, per_page: 25)
+      render :index
+    end
+
     def show
-      @email = @email.includes(:events, :attachments)
       @events = @email.events.reverse_chronological
       @attachments = @email.attachments
     end
 
-    def destroy
-      @email.destroy!
-      redirect_to emails_path, notice: "Email deleted successfully."
+    def archive
+      @email.archive!
+      redirect_to emails_path, notice: "Email archived successfully."
+    end
+
+    def unarchive
+      @email.unarchive!
+      redirect_to email_path(@email), notice: "Email restored successfully."
     end
 
     def resend
@@ -55,7 +72,12 @@ module SentEmails
     private
 
     def set_email
-      @email = Email.find(params[:id])
+      # Include archived emails so we can view/restore them
+      @email = Email.unscoped.includes(:events, :attachments).find(params[:id])
+    end
+
+    def email_not_found
+      redirect_to emails_path, alert: "Email not found."
     end
 
     def paginate(scope, per_page: 25)

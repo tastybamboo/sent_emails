@@ -6,8 +6,8 @@ module SentEmails
       attr_reader :payload, :headers, :raw_body
 
       def initialize(payload:, headers:, raw_body: nil)
-        @payload = payload
-        @headers = headers
+        @payload = payload.with_indifferent_access
+        @headers = headers.with_indifferent_access
         @raw_body = raw_body
       end
 

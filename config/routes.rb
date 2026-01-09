@@ -3,9 +3,14 @@
 SentEmails::Engine.routes.draw do
   root to: redirect("emails")
 
-  resources :emails, only: [:index, :show, :destroy] do
+  resources :emails, only: [:index, :show] do
+    collection do
+      get :archived
+    end
     member do
       post :resend
+      post :archive
+      post :unarchive
     end
   end
 

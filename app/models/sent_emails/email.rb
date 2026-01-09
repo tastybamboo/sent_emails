@@ -43,7 +43,11 @@ module SentEmails
     validates :to_addresses, presence: true
     validates :message_id, uniqueness: true, allow_nil: true
 
-    scope :recent, -> { order(created_at: :desc) }
+    # Archive scopes - use active by default in queries
+    scope :active, -> { where(archived_at: nil) }
+    scope :archived, -> { where.not(archived_at: nil) }
+
+    scope :recent, -> { active.order(created_at: :desc) }
     scope :by_status, ->(status) { where(status: status) }
     scope :search, ->(query) {
       if using_postgresql?
@@ -96,6 +100,114 @@ module SentEmails
       text_body.present?
     end
 
+    # Check if email is multipart (has both HTML and text)
+    def multipart?
+      html? && text?
+    end
+
+    # Email format description
+    def format_description
+      if multipart?
+        "HTML and Text (Multipart)"
+      elsif html?
+        "HTML Only"
+      elsif text?
+        "Text Only"
+      else
+        "Unknown"
+      end
+    end
+
+    # HTML body with CID images replaced with data URLs
+    def html_body_with_embedded_images
+      return html_body unless html_body.present?
+
+      result = html_body.dup
+      attachments.inline_attachments.each do |attachment|
+        next unless attachment.content_id.present? && attachment.data_url.present?
+
+        # Replace cid:content_id references with data URLs
+        result.gsub!(/cid:#{Regexp.escape(attachment.content_id)}/i, attachment.data_url)
+      end
+      result
+    end
+
+    # All headers including standard ones stored in dedicated columns
+    def all_headers
+      standard = {
+        "From" => from_address,
+        "To" => to_addresses&.join(", "),
+        "Subject" => subject,
+        "Date" => sent_at&.rfc2822 || created_at.rfc2822,
+        "Message-ID" => message_id
+      }
+
+      standard["Cc"] = cc_addresses.join(", ") if cc_addresses&.any?
+      standard["Bcc"] = bcc_addresses.join(", ") if bcc_addresses&.any?
+
+      # Merge with custom headers (custom headers come after standard)
+      standard.merge(headers || {}).compact
+    end
+
+    # Generate a raw message representation
+    def raw_message
+      lines = []
+
+      # Headers
+      all_headers.each do |name, value|
+        lines << "#{name}: #{value}"
+      end
+
+      lines << "Content-Type: #{format_content_type}"
+      lines << "MIME-Version: 1.0"
+      lines << ""
+
+      # Body
+      if multipart?
+        boundary = "----=_Part_#{id}_#{created_at.to_i}"
+        lines << "Content-Type: multipart/alternative; boundary=\"#{boundary}\""
+        lines << ""
+
+        if text_body.present?
+          lines << "--#{boundary}"
+          lines << "Content-Type: text/plain; charset=UTF-8"
+          lines << ""
+          lines << text_body
+          lines << ""
+        end
+
+        if html_body.present?
+          lines << "--#{boundary}"
+          lines << "Content-Type: text/html; charset=UTF-8"
+          lines << ""
+          lines << html_body
+          lines << ""
+        end
+
+        lines << "--#{boundary}--"
+      elsif html_body.present?
+        lines << html_body
+      elsif text_body.present?
+        lines << text_body
+      end
+
+      lines.join("\n")
+    end
+
+    private
+
+    def format_content_type
+      if multipart?
+        "multipart/alternative"
+      elsif html?
+        "text/html; charset=UTF-8"
+      else
+        "text/plain; charset=UTF-8"
+      end
+    end
+
+    public
+
     # Primary recipient (first to address)
     def primary_recipient
       to_addresses&.first
@@ -109,6 +221,21 @@ module SentEmails
     # Provider display name
     def provider_name
       provider&.titleize || delivery_method&.titleize || "Unknown"
+    end
+
+    # Check if email is archived
+    def archived?
+      archived_at.present?
+    end
+
+    # Archive the email (soft-delete)
+    def archive!
+      update!(archived_at: Time.current)
+    end
+
+    # Restore an archived email
+    def unarchive!
+      update!(archived_at: nil)
     end
 
     private

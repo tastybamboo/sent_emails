@@ -12,6 +12,11 @@ module SentEmails
       app.config.assets.precompile += %w[sent_emails/application.css] if app.config.respond_to?(:assets)
     end
 
+    # Add middleware to capture request context for emails sent from controllers
+    initializer "sent_emails.request_context" do |app|
+      app.middleware.use SentEmails::RequestMiddleware
+    end
+
     # Hook into ActionMailer to automatically capture all emails
     # Use both to_prepare (for console/runner) and eager_load! (for web server)
     initializer "sent_emails.hook_action_mailer" do |app|

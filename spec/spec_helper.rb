@@ -6,6 +6,7 @@ ENV["RAILS_ENV"] = "test"
 require_relative "dummy/config/application"
 
 require "rspec/rails"
+require "shoulda-matchers"
 require "mail"
 require "sent_emails"
 
@@ -34,6 +35,10 @@ RSpec.configure do |config|
 
   # Include SentEmails test helpers for all specs
   config.include SentEmails::TestHelpers
+
+  # Include Shoulda matchers in model specs
+  config.include Shoulda::Matchers::ActiveModel, type: :model
+  config.include Shoulda::Matchers::ActiveRecord, type: :model
 
   # Shoulda matchers
   Shoulda::Matchers.configure do |shoulda_config|

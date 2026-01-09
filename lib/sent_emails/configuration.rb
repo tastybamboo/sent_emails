@@ -13,7 +13,7 @@ module SentEmails
 
     def initialize
       @enabled = true
-      @attachment_storage = :active_storage
+      @attachment_storage = :database  # Store inline in database for simplicity
       @max_attachment_size = 10 * 1024 * 1024 # 10 MB
       @retention_period = 90.days
       @authentication_method = nil

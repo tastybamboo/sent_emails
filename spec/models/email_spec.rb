@@ -2,7 +2,7 @@
 
 require "spec_helper"
 
-RSpec.describe SentEmails::Email do
+RSpec.describe SentEmails::Email, type: :model do
   describe "associations" do
     it { is_expected.to have_many(:attachments) }
     it { is_expected.to have_many(:events) }
@@ -14,6 +14,28 @@ RSpec.describe SentEmails::Email do
   end
 
   describe "scopes" do
+    describe ".active" do
+      it "returns non-archived emails" do
+        active = create_email
+        archived = create_email(archived_at: 1.hour.ago)
+
+        results = SentEmails::Email.active
+        expect(results).to include(active)
+        expect(results).not_to include(archived)
+      end
+    end
+
+    describe ".archived" do
+      it "returns archived emails" do
+        active = create_email
+        archived = create_email(archived_at: 1.hour.ago)
+
+        results = SentEmails::Email.archived
+        expect(results).to include(archived)
+        expect(results).not_to include(active)
+      end
+    end
+
     describe ".recent" do
       it "returns emails ordered by creation date descending" do
         old = create_email(created_at: 2.days.ago)
@@ -22,6 +44,15 @@ RSpec.describe SentEmails::Email do
         result = SentEmails::Email.recent
         expect(result.first.id).to eq(new.id)
         expect(result.last.id).to eq(old.id)
+      end
+
+      it "excludes archived emails" do
+        active = create_email
+        archived = create_email(archived_at: 1.hour.ago)
+
+        results = SentEmails::Email.recent
+        expect(results).to include(active)
+        expect(results).not_to include(archived)
       end
     end
 
@@ -127,6 +158,34 @@ RSpec.describe SentEmails::Email do
 
       recipients = email.all_recipients
       expect(recipients.uniq.length).to eq(recipients.length)
+    end
+  end
+
+  describe "#archived?" do
+    it "returns true when archived_at is set" do
+      email = create_email(archived_at: 1.hour.ago)
+      expect(email.archived?).to be true
+    end
+
+    it "returns false when archived_at is nil" do
+      email = create_email
+      expect(email.archived?).to be false
+    end
+  end
+
+  describe "#archive!" do
+    it "sets archived_at to current time" do
+      email = create_email
+      expect { email.archive! }.to change { email.archived? }.from(false).to(true)
+      expect(email.archived_at).to be_within(1.second).of(Time.current)
+    end
+  end
+
+  describe "#unarchive!" do
+    it "clears archived_at" do
+      email = create_email(archived_at: 1.hour.ago)
+      expect { email.unarchive! }.to change { email.archived? }.from(true).to(false)
+      expect(email.archived_at).to be_nil
     end
   end
 

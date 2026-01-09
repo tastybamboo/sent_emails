@@ -5,6 +5,7 @@ require_relative "sent_emails/configuration"
 require_relative "sent_emails/engine"
 require_relative "sent_emails/mailer_helper"
 require_relative "sent_emails/capture"
+require_relative "sent_emails/request_middleware"
 require_relative "sent_emails/providers/base"
 require_relative "sent_emails/providers/mailpace"
 require_relative "sent_emails/test_helpers"
@@ -24,69 +25,95 @@ module SentEmails
   class Error < StandardError; end
 
   # Automatically patches ActionMailer::MessageDelivery to capture all emails
-  # before they're delivered, including Devise emails and custom mailers.
+  # after they're delivered, including Devise emails and custom mailers.
   #
   # This works by prepending a module that intercepts deliver_now and deliver_later.
+  #
+  # Note: We can only capture emails in deliver_now because Rails doesn't allow
+  # accessing the message before deliver_later (it raises an error). So for
+  # deliver_later emails, we capture when the job runs deliver_now.
   module ActionMailerHook
     def deliver_now
-      @_delivery_type = "deliver_now"
       capture_request_context
-      capture_email_before_delivery
-      super
+      result = super
+      capture_email
+      result
+    rescue => e
+      # Re-raise the original error but still try to capture
+      Rails.logger.error("[SentEmails] Error during deliver_now: #{e.message}")
+      raise
     ensure
       clear_request_context
     end
 
     def deliver_later(*)
-      @_delivery_type = "deliver_later"
-      capture_request_context
-      capture_email_before_delivery
+      # Note: We cannot capture here because Rails doesn't allow accessing
+      # the message before deliver_later. The email will be captured when
+      # the job runs deliver_now.
       super
-    ensure
-      clear_request_context
     end
 
     def capture_request_context
-      # Store current request in thread-local storage for the capture
-      return unless defined?(ActionDispatch::Request)
-      request = ActionDispatch::Base.current_request
-      Thread.current[:__sent_emails_request] = request if request
-    rescue
-      # Silently ignore if we can't get the request
+      # Request context is captured via RequestMiddleware if available.
+      # The middleware sets Thread.current[:__sent_emails_request] for each request.
     end
 
     def clear_request_context
-      Thread.current.delete(:__sent_emails_request)
+      Thread.current[:__sent_emails_request] = nil
     end
 
     private
 
-    def capture_email_before_delivery
+    def capture_email
       return unless SentEmails.enabled?
-      return unless @mail_message
+
+      mail_message = message
+      return unless mail_message
 
       SentEmails::Capture.call(
-        message: @mail_message,
+        message: mail_message,
         mailer: @mailer_class.name,
         action: @action,
-        params: @args.first || {},
+        params: extract_mailer_params,
         delivery_method: extract_delivery_method,
         delivery_settings: extract_delivery_settings,
-        delivery_type: extract_delivery_type,
-        request: extract_request_context
+        delivery_type: detect_delivery_type,
+        request: extract_request_context,
+        status: :sent
       )
     rescue => e
       Rails.logger.error("[SentEmails] Failed to capture email: #{e.message}")
       Rails.logger.error(e.backtrace.first(5).join("\n")) if e.backtrace
     end
 
-    def extract_delivery_type
-      # Will be set by the wrapper in deliver_now/deliver_later
-      @_delivery_type ||= "unknown"
+    def extract_mailer_params
+      # Mailers using .with() store params in @params (e.g., Devise)
+      # Mailers passing args directly store them in @args
+      if defined?(@params) && @params.present?
+        @params
+      elsif @args.is_a?(Array) && @args.first.is_a?(Hash)
+        @args.first
+      elsif @args.is_a?(Array) && @args.any?
+        @args.each_with_index.to_h { |arg, i| ["arg_#{i}".to_sym, arg] }
+      else
+        {}
+      end
+    rescue
+      {}
+    end
+
+    def detect_delivery_type
+      # Check if we're being called from a background job
+      if caller_locations.any? { |loc| loc.path.to_s.include?("active_job") }
+        "deliver_later"
+      else
+        "deliver_now"
+      end
+    rescue
+      "unknown"
     end
 
     def extract_request_context
-      # Try to get Rails request context if available
       return nil unless defined?(ActionDispatch::Request)
       Thread.current[:__sent_emails_request]
     rescue
@@ -94,13 +121,13 @@ module SentEmails
     end
 
     def extract_delivery_method
-      @mail_message.delivery_method.class.name.demodulize.underscore.to_sym
+      message.delivery_method.class.name.demodulize.underscore.to_sym
     rescue
       :unknown
     end
 
     def extract_delivery_settings
-      settings = @mail_message.delivery_method.settings
+      settings = message.delivery_method.settings
       settings.is_a?(Hash) ? settings : {}
     rescue
       {}

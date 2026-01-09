@@ -87,6 +87,8 @@ module SentEmails
     # @example
     #   before { clear_sent_emails }
     def clear_sent_emails
+      Event.delete_all
+      Attachment.delete_all
       Email.delete_all
     end
 

@@ -11,6 +11,11 @@
         <%= @email.subject || "(no subject)" %>
       </h1>
       <%= render partial: "sent_emails/emails/status_badge", locals: { status: @email.status } %>
+      <% if @email.archived? %>
+        <span class="inline-flex items-center rounded-md bg-gray-100 px-2 py-1 text-xs font-medium text-gray-600">
+          Archived
+        </span>
+      <% end %>
     </div>
     <div class="flex items-center space-x-3">
       <%= button_to resend_email_path(@email),
@@ -22,14 +27,26 @@
         </svg>
         Resend
       <% end %>
-      <%= button_to email_path(@email),
-        method: :delete,
-        class: "inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50",
-        data: { confirm: "Are you sure you want to delete this email?" } do %>
-        <svg class="-ml-0.5 mr-1.5 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-        </svg>
-        Delete
+      <% if @email.archived? %>
+        <%= button_to unarchive_email_path(@email),
+          method: :post,
+          class: "inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50",
+          data: { confirm: "Restore this email from the archive?" } do %>
+          <svg class="-ml-0.5 mr-1.5 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 8.25H7.5a2.25 2.25 0 00-2.25 2.25v9a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25v-9a2.25 2.25 0 00-2.25-2.25H15m0-3l-3-3m0 0l-3 3m3-3V15" />
+          </svg>
+          Restore
+        <% end %>
+      <% else %>
+        <%= button_to archive_email_path(@email),
+          method: :post,
+          class: "inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50",
+          data: { confirm: "Archive this email? You can restore it later from the archive." } do %>
+          <svg class="-ml-0.5 mr-1.5 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m8.25 3v6.75m0 0l-3-3m3 3l3-3M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+          </svg>
+          Archive
+        <% end %>
       <% end %>
     </div>
   </div>
@@ -79,25 +96,35 @@
       </div>
 
       <!-- Content Tabs -->
+      <% regular_attachments = @attachments.reject(&:inline?) %>
+      <% default_tab = @email.html? ? "tab-html" : (@email.text? ? "tab-text" : "tab-headers") %>
       <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
         <div class="border-b border-gray-200">
           <nav class="-mb-px flex space-x-8 px-4 sm:px-6" aria-label="Tabs">
-            <button type="button" data-tab="tab-html" onclick="switchTab('tab-html')"
-              class="tab-button active whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700">
-              HTML Preview
-            </button>
-            <button type="button" data-tab="tab-text" onclick="switchTab('tab-text')"
-              class="tab-button whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700">
-              Plain Text
-            </button>
+            <% if @email.html? %>
+              <button type="button" data-tab="tab-html" onclick="switchTab('tab-html')"
+                class="tab-button <%= 'active' if default_tab == 'tab-html' %> whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700">
+                HTML Preview
+              </button>
+            <% end %>
+            <% if @email.text? %>
+              <button type="button" data-tab="tab-text" onclick="switchTab('tab-text')"
+                class="tab-button <%= 'active' if default_tab == 'tab-text' %> whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700">
+                Plain Text
+              </button>
+            <% end %>
             <button type="button" data-tab="tab-headers" onclick="switchTab('tab-headers')"
               class="tab-button whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700">
               Headers
             </button>
-            <% if @attachments.any? %>
+            <button type="button" data-tab="tab-raw" onclick="switchTab('tab-raw')"
+              class="tab-button whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700">
+              Raw
+            </button>
+            <% if regular_attachments.any? %>
               <button type="button" data-tab="tab-attachments" onclick="switchTab('tab-attachments')"
                 class="tab-button whitespace-nowrap border-b-2 py-4 px-1 text-sm font-medium border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700">
-                Attachments (<%= @attachments.size %>)
+                Attachments (<%= regular_attachments.size %>)
               </button>
             <% end %>
           </nav>
@@ -106,44 +133,41 @@
         <!-- Tab Content -->
         <div class="px-4 py-5 sm:p-6">
           <!-- HTML Preview -->
-          <div id="tab-html" class="tab-content active">
-            <% if @email.html_body.present? %>
-              <iframe srcdoc="<%= h @email.html_body %>" class="email-preview-frame rounded-lg border border-gray-200"></iframe>
-            <% else %>
-              <p class="text-sm text-gray-500 italic">No HTML content available</p>
-            <% end %>
-          </div>
+          <% if @email.html? %>
+            <div id="tab-html" class="tab-content <%= 'active' if default_tab == 'tab-html' %>">
+              <iframe srcdoc="<%= h @email.html_body_with_embedded_images %>" class="email-preview-frame rounded-lg border border-gray-200"></iframe>
+            </div>
+          <% end %>
 
           <!-- Plain Text -->
-          <div id="tab-text" class="tab-content">
-            <% if @email.text_body.present? %>
+          <% if @email.text? %>
+            <div id="tab-text" class="tab-content <%= 'active' if default_tab == 'tab-text' %>">
               <pre class="whitespace-pre-wrap text-sm text-gray-700 bg-gray-50 p-4 rounded-lg overflow-auto max-h-96"><%= @email.text_body %></pre>
-            <% else %>
-              <p class="text-sm text-gray-500 italic">No plain text content available</p>
-            <% end %>
-          </div>
+            </div>
+          <% end %>
 
-          <!-- Headers -->
+          <!-- Headers (all headers including standard ones) -->
           <div id="tab-headers" class="tab-content">
-            <% if @email.headers.present? && @email.headers.any? %>
-              <dl class="divide-y divide-gray-100">
-                <% @email.headers.each do |key, value| %>
-                  <div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4">
-                    <dt class="text-sm font-medium text-gray-500"><%= key %></dt>
-                    <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0 break-all"><%= value %></dd>
-                  </div>
-                <% end %>
-              </dl>
-            <% else %>
-              <p class="text-sm text-gray-500 italic">No custom headers</p>
-            <% end %>
+            <dl class="divide-y divide-gray-100">
+              <% @email.all_headers.each do |key, value| %>
+                <div class="py-2 sm:grid sm:grid-cols-3 sm:gap-4">
+                  <dt class="text-sm font-medium text-gray-500"><%= key %></dt>
+                  <dd class="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0 break-all font-mono text-xs"><%= value %></dd>
+                </div>
+              <% end %>
+            </dl>
           </div>
 
-          <!-- Attachments -->
+          <!-- Raw Message Source -->
+          <div id="tab-raw" class="tab-content">
+            <pre class="whitespace-pre-wrap text-xs text-gray-700 font-mono bg-gray-50 p-4 rounded-lg overflow-auto max-h-[600px]"><%= @email.raw_message %></pre>
+          </div>
+
+          <!-- Attachments (non-inline only) -->
           <div id="tab-attachments" class="tab-content">
-            <% if @attachments.any? %>
+            <% if regular_attachments.any? %>
               <ul class="divide-y divide-gray-100">
-                <% @attachments.each do |attachment| %>
+                <% regular_attachments.each do |attachment| %>
                   <li class="flex items-center justify-between py-3">
                     <div class="flex items-center">
                       <svg class="h-5 w-5 text-gray-400 mr-3" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -167,68 +191,6 @@
 
     <!-- Sidebar -->
     <div class="space-y-6">
-      <!-- Rails Context Panel -->
-      <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
-        <div class="px-4 py-5 sm:p-6">
-          <h3 class="text-base font-semibold text-gray-900 mb-4">Rails Context</h3>
-          <dl class="space-y-3">
-            <div>
-              <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Mailer</dt>
-              <dd class="mt-1 text-sm text-gray-900 font-mono"><%= @email.mailer || "Unknown" %></dd>
-            </div>
-            <div>
-              <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Action</dt>
-              <dd class="mt-1 text-sm text-gray-900 font-mono"><%= @email.action || "Unknown" %></dd>
-            </div>
-            <% if @email.template_path.present? %>
-              <div>
-                <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Template</dt>
-                <dd class="mt-1 text-sm text-gray-900 font-mono text-xs"><%= @email.template_path %></dd>
-              </div>
-            <% end %>
-            <% if @email.mailer_params.present? && @email.mailer_params.any? %>
-              <div>
-                <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Parameters</dt>
-                <dd class="mt-1">
-                  <pre class="text-xs text-gray-700 bg-gray-50 p-2 rounded overflow-auto max-h-40"><%= JSON.pretty_generate(@email.mailer_params) %></pre>
-                </dd>
-              </div>
-            <% end %>
-          </dl>
-        </div>
-      </div>
-
-      <!-- Delivery Details Panel -->
-      <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
-        <div class="px-4 py-5 sm:p-6">
-          <h3 class="text-base font-semibold text-gray-900 mb-4">Delivery Details</h3>
-          <dl class="space-y-3">
-            <div>
-              <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Provider</dt>
-              <dd class="mt-1 text-sm text-gray-900"><%= @email.provider_name %></dd>
-            </div>
-            <div>
-              <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Delivery Method</dt>
-              <dd class="mt-1 text-sm text-gray-900"><%= @email.delivery_method&.titleize || "Unknown" %></dd>
-            </div>
-            <% if @email.delivery_settings.present? && @email.delivery_settings.any? %>
-              <% @email.delivery_settings.each do |key, value| %>
-                <div>
-                  <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide"><%= key.to_s.titleize %></dt>
-                  <dd class="mt-1 text-sm text-gray-900 font-mono text-xs"><%= value %></dd>
-                </div>
-              <% end %>
-            <% end %>
-            <% if @email.delivered_at.present? %>
-              <div>
-                <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Delivered At</dt>
-                <dd class="mt-1 text-sm text-gray-900"><%= @email.delivered_at.strftime("%B %d, %Y at %H:%M:%S") %></dd>
-              </div>
-            <% end %>
-          </dl>
-        </div>
-      </div>
-
       <!-- Event Timeline -->
       <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
         <div class="px-4 py-5 sm:p-6">
@@ -240,32 +202,32 @@
                   <li>
                     <div class="relative pb-8">
                       <% unless index == @events.size - 1 %>
-                        <span class="absolute left-4 top-4 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
+                        <span class="absolute left-3.5 top-8 -ml-px h-full w-0.5 bg-gray-200" aria-hidden="true"></span>
                       <% end %>
-                      <div class="relative flex space-x-3">
-                        <div>
-                          <span class="h-8 w-8 rounded-full flex items-center justify-center ring-8 ring-white <%= event.positive? ? 'bg-green-500' : (event.negative? ? 'bg-red-500' : 'bg-gray-400') %>">
-                            <svg class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                              <% if event.positive? %>
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                              <% elsif event.negative? %>
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                              <% else %>
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              <% end %>
-                            </svg>
-                          </span>
-                        </div>
-                        <div class="flex min-w-0 flex-1 justify-between space-x-4 pt-1.5">
-                          <div>
-                            <p class="text-sm text-gray-900 font-medium"><%= event.display_name %></p>
-                            <p class="text-xs text-gray-500"><%= event.provider %></p>
-                          </div>
-                          <div class="whitespace-nowrap text-right text-xs text-gray-500">
-                            <%= event.occurred_at.strftime("%H:%M:%S") %>
-                            <br>
-                            <%= event.occurred_at.strftime("%b %d") %>
-                          </div>
+                      <div class="relative flex items-start space-x-3">
+                        <span class="flex h-7 w-7 items-center justify-center rounded-full <%= event.positive? ? 'bg-green-500' : (event.negative? ? 'bg-red-500' : 'bg-gray-400') %>">
+                          <svg class="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                            <% if event.positive? %>
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            <% elsif event.negative? %>
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            <% else %>
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            <% end %>
+                          </svg>
+                        </span>
+                        <div class="min-w-0 flex-1">
+                          <p class="text-sm font-medium text-gray-900">
+                            <%= event.display_name %>
+                            <span class="ml-2 text-xs font-normal text-gray-500">
+                              <%= event.occurred_at.strftime("%H:%M:%S") %>
+                            </span>
+                          </p>
+                          <p class="text-xs text-gray-500">
+                            <%= event.provider || "Rails" %>
+                            <span class="mx-1">&middot;</span>
+                            <%= event.occurred_at.strftime("%b %d, %Y") %>
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -276,6 +238,72 @@
           <% else %>
             <p class="text-sm text-gray-500 italic">No events recorded yet</p>
           <% end %>
+        </div>
+      </div>
+
+      <!-- Provider Details Panel -->
+      <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
+        <div class="px-4 py-5 sm:p-6">
+          <h3 class="text-base font-semibold text-gray-900 mb-4">Provider Details</h3>
+          <dl class="space-y-3">
+            <div>
+              <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Provider</dt>
+              <dd class="mt-1 text-xs text-gray-900 font-mono"><%= @email.provider_name %></dd>
+            </div>
+            <div>
+              <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Delivery Method</dt>
+              <dd class="mt-1 text-xs text-gray-900 font-mono"><%= @email.delivery_method || "unknown" %></dd>
+            </div>
+            <div>
+              <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Email Format</dt>
+              <dd class="mt-1 text-xs text-gray-900 font-mono"><%= @email.format_description %></dd>
+            </div>
+            <% if @email.delivery_settings.present? && @email.delivery_settings.any? %>
+              <% @email.delivery_settings.each do |key, value| %>
+                <div>
+                  <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide"><%= key.to_s.titleize %></dt>
+                  <dd class="mt-1 text-xs text-gray-900 font-mono"><%= value %></dd>
+                </div>
+              <% end %>
+            <% end %>
+            <% if @email.delivered_at.present? %>
+              <div>
+                <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Delivered At</dt>
+                <dd class="mt-1 text-xs text-gray-900 font-mono"><%= @email.delivered_at.strftime("%Y-%m-%d %H:%M:%S") %></dd>
+              </div>
+            <% end %>
+          </dl>
+        </div>
+      </div>
+
+      <!-- Rails Context Panel -->
+      <div class="bg-white shadow-sm ring-1 ring-gray-900/5 sm:rounded-xl">
+        <div class="px-4 py-5 sm:p-6">
+          <h3 class="text-base font-semibold text-gray-900 mb-4">Rails Context</h3>
+          <dl class="space-y-3">
+            <div>
+              <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Mailer</dt>
+              <dd class="mt-1 text-xs text-gray-900 font-mono"><%= @email.mailer || "Unknown" %></dd>
+            </div>
+            <div>
+              <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Action</dt>
+              <dd class="mt-1 text-xs text-gray-900 font-mono"><%= @email.action || "Unknown" %></dd>
+            </div>
+            <div>
+              <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Template</dt>
+              <dd class="mt-1 text-xs text-gray-900 font-mono"><%= @email.template_path || "N/A" %></dd>
+            </div>
+            <div>
+              <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Parameters</dt>
+              <dd class="mt-1">
+                <% if @email.mailer_params.present? && @email.mailer_params.any? %>
+                  <pre class="text-xs text-gray-700 font-mono bg-gray-50 p-2 rounded overflow-auto max-h-40"><%= JSON.pretty_generate(@email.mailer_params) %></pre>
+                <% else %>
+                  <span class="text-xs text-gray-900 font-mono">None</span>
+                <% end %>
+              </dd>
+            </div>
+          </dl>
         </div>
       </div>
     </div>

@@ -1,30 +1,20 @@
 # frozen_string_literal: true
 
 require "rails/generators"
-require "rails/generators/migration"
 
 module SentEmails
   module Generators
     class InstallGenerator < Rails::Generators::Base
-      include Rails::Generators::Migration
-
       source_root File.expand_path("templates", __dir__)
 
       desc "Installs SentEmails: creates initializer and copies migrations"
-
-      def self.next_migration_number(dirname)
-        next_migration_number = current_migration_number(dirname) + 1
-        ActiveRecord::Migration.next_migration_number(next_migration_number)
-      end
 
       def copy_initializer
         template "initializer.rb", "config/initializers/sent_emails.rb"
       end
 
       def copy_migrations
-        migration_template "create_sent_emails_emails.rb.tt", "db/migrate/create_sent_emails_emails.rb"
-        migration_template "create_sent_emails_attachments.rb.tt", "db/migrate/create_sent_emails_attachments.rb"
-        migration_template "create_sent_emails_events.rb.tt", "db/migrate/create_sent_emails_events.rb"
+        rake "sent_emails:install:migrations"
       end
 
       def add_route

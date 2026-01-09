@@ -21,12 +21,36 @@ ActiveRecord::Schema.define(version: 0) do
     t.string :status, default: "pending"
     t.datetime :sent_at
     t.datetime :delivered_at
+
+    # Cached latest event (migration 5)
+    t.string :latest_event_type
+    t.datetime :latest_event_at
+
+    # Context capture (migration 6)
+    t.string :environment
+    t.string :delivery_type
+    t.string :process_type
+    t.string :request_id
+    t.string :user_agent
+    t.string :remote_ip
+    t.string :ruby_version
+    t.string :rails_version
+    t.json :context
+
+    # Archive support (migration 7)
+    t.datetime :archived_at
+
+    # Delivery tracking (migration 10)
+    t.string :delivery_token
+
     t.datetime :created_at, null: false
     t.datetime :updated_at, null: false
 
     t.index [:message_id], unique: true
     t.index [:status]
     t.index [:created_at]
+    t.index [:archived_at], where: "archived_at IS NULL", name: "index_sent_emails_emails_active"
+    t.index [:delivery_token], where: "delivery_token IS NOT NULL"
   end
 
   create_table :sent_emails_attachments, id: :bigint, force: :cascade do |t|
@@ -35,10 +59,14 @@ ActiveRecord::Schema.define(version: 0) do
     t.string :content_type
     t.integer :byte_size
     t.binary :blob
+    t.string :content_id
+    t.boolean :inline, default: false
+    t.string :content_hash
     t.datetime :created_at, null: false
     t.datetime :updated_at, null: false
 
     t.foreign_key :sent_emails_emails, column: :email_id
+    t.index [:content_hash]
   end
 
   create_table :sent_emails_events, id: :bigint, force: :cascade do |t|

@@ -1,51 +1,13 @@
 # frozen_string_literal: true
 
 module SentEmails
+  # Legacy helper module for mailers.
+  # Email capture is now handled automatically via ActionMailerHook prepended
+  # to ActionMailer::MessageDelivery. This module is kept for backwards
+  # compatibility but no longer performs any capture logic.
   module MailerHelper
     extend ActiveSupport::Concern
 
-    included do
-      # Hook into the deliver callback which works for all delivery methods
-      # wrap the deliver method to capture before actual delivery
-      alias_method :original_deliver, :deliver
-      
-      def deliver(...)
-        capture_sent_email_before_delivery
-        original_deliver(...)
-      end
-    end
-
-    private
-
-    def capture_sent_email_before_delivery
-      return unless SentEmails.enabled?
-      return unless message
-
-      SentEmails::Capture.call(
-        message: message,
-        mailer: self.class.name,
-        action: action_name,
-        params: params,
-        delivery_method: extract_delivery_method,
-        delivery_settings: extract_delivery_settings
-      )
-    rescue => e
-      # Don't let email capture failures prevent email delivery
-      Rails.logger.error("[SentEmails] Failed to capture email: #{e.message}")
-      Rails.logger.error(e.backtrace.first(5).join("\n")) if e.backtrace
-    end
-
-    def extract_delivery_method
-      message.delivery_method.class.name.demodulize.underscore.to_sym
-    rescue
-      :unknown
-    end
-
-    def extract_delivery_settings
-      settings = message.delivery_method.settings
-      settings.is_a?(Hash) ? settings : {}
-    rescue
-      {}
-    end
+    # No-op: capture is handled by ActionMailerHook
   end
 end

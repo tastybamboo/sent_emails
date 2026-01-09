@@ -15,10 +15,13 @@ module SentEmails
     scope :by_type, ->(type) { where(event_type: type) }
 
     # Event types that indicate successful delivery
-    POSITIVE_EVENTS = %w[queued sent delivered opened clicked].freeze
+    POSITIVE_EVENTS = %w[sent delivered opened clicked].freeze
 
     # Event types that indicate problems
-    NEGATIVE_EVENTS = %w[bounced failed spam deferred].freeze
+    NEGATIVE_EVENTS = %w[bounced failed spam rejected].freeze
+
+    # Event types that are neutral/pending
+    NEUTRAL_EVENTS = %w[queued deferred processing].freeze
 
     # Check if this is a positive event
     def positive?

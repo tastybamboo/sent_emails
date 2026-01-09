@@ -1,13 +1,35 @@
-<div class="sm:flex sm:items-center">
+<div class="sm:flex sm:items-center sm:justify-between">
   <div class="sm:flex-auto">
-    <h1 class="text-2xl font-semibold text-gray-900">Sent Emails</h1>
-    <p class="mt-2 text-sm text-gray-700">A list of all emails sent from your application.</p>
+    <% if action_name == "archived" %>
+      <h1 class="text-2xl font-semibold text-gray-900">Archived Emails</h1>
+      <p class="mt-2 text-sm text-gray-700">Previously archived emails that can be restored.</p>
+    <% else %>
+      <h1 class="text-2xl font-semibold text-gray-900">Sent Emails</h1>
+      <p class="mt-2 text-sm text-gray-700">A list of all emails sent from your application.</p>
+    <% end %>
+  </div>
+  <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
+    <% if action_name == "archived" %>
+      <%= link_to emails_path, class: "inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" do %>
+        <svg class="-ml-0.5 mr-1.5 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 15L3 9m0 0l6-6M3 9h12a6 6 0 010 12h-3" />
+        </svg>
+        Back to Inbox
+      <% end %>
+    <% else %>
+      <%= link_to archived_emails_path, class: "inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50" do %>
+        <svg class="-ml-0.5 mr-1.5 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+        </svg>
+        View Archive
+      <% end %>
+    <% end %>
   </div>
 </div>
 
 <!-- Filters -->
 <div class="mt-6 flex flex-col sm:flex-row gap-4">
-  <%= form_with url: emails_path, method: :get, class: "flex flex-col sm:flex-row gap-4 flex-1" do |f| %>
+  <%= form_with url: (action_name == "archived" ? archived_emails_path : emails_path), method: :get, class: "flex flex-col sm:flex-row gap-4 flex-1" do |f| %>
     <div class="flex-1">
       <%= f.text_field :q,
         value: params[:q],
@@ -100,10 +122,11 @@
 
 <!-- Pagination -->
 <% if @emails.respond_to?(:has_more) && (@emails.current_page > 1 || @emails.has_more) %>
+  <% pagination_path = action_name == "archived" ? :archived_emails_path : :emails_path %>
   <nav class="mt-6 flex items-center justify-between border-t border-gray-200 px-4 sm:px-0">
     <div class="-mt-px flex w-0 flex-1">
       <% if @emails.current_page > 1 %>
-        <%= link_to emails_path(page: @emails.current_page - 1, q: params[:q], status: params[:status]),
+        <%= link_to send(pagination_path, page: @emails.current_page - 1, q: params[:q], status: params[:status]),
           class: "inline-flex items-center border-t-2 border-transparent pt-4 pr-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700" do %>
           <svg class="mr-3 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
             <path fill-rule="evenodd" d="M18 10a.75.75 0 01-.75.75H4.66l2.1 1.95a.75.75 0 11-1.02 1.1l-3.5-3.25a.75.75 0 010-1.1l3.5-3.25a.75.75 0 111.02 1.1l-2.1 1.95h12.59A.75.75 0 0118 10z" clip-rule="evenodd" />
@@ -119,7 +142,7 @@
     </div>
     <div class="-mt-px flex w-0 flex-1 justify-end">
       <% if @emails.has_more %>
-        <%= link_to emails_path(page: @emails.current_page + 1, q: params[:q], status: params[:status]),
+        <%= link_to send(pagination_path, page: @emails.current_page + 1, q: params[:q], status: params[:status]),
           class: "inline-flex items-center border-t-2 border-transparent pt-4 pl-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700" do %>
           Next
           <svg class="ml-3 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
