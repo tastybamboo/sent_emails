@@ -32,6 +32,19 @@ SentEmails.configure do |config|
   #   }
   # config.authentication_method = nil
 
+  # Webhook route mounting
+  # By default, webhooks are mounted within the engine (e.g., /admin/sent_emails/webhooks/:provider)
+  # Set to false to mount webhooks at a separate path using SentEmails.mount_webhook_routes
+  #
+  # Example for separate webhook path:
+  #   config.mount_webhooks_in_engine = false
+  #
+  #   # Then in config/routes.rb:
+  #   mount SentEmails::Engine, at: "/admin/sent_emails"
+  #   SentEmails.mount_webhook_routes(self, at: "/webhooks/sent_emails")
+  #
+  # config.mount_webhooks_in_engine = true
+
   # Configure webhook providers
   # Each provider has its own authentication mechanism
 

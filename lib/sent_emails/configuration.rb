@@ -9,7 +9,8 @@ module SentEmails
       :authentication_method,
       :base_controller,
       :providers,
-      :primary_key_type
+      :primary_key_type,
+      :mount_webhooks_in_engine
 
     def initialize
       @enabled = true
@@ -20,6 +21,7 @@ module SentEmails
       @base_controller = "ApplicationController"
       @providers = {}
       @primary_key_type = :bigint # :bigint or :uuid
+      @mount_webhooks_in_engine = true # Set to false to mount webhooks separately
     end
 
     # Configure a specific provider

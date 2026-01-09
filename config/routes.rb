@@ -16,5 +16,12 @@ SentEmails::Engine.routes.draw do
 
   # Webhook routes - provider is determined by route matching, not defaults
   # The actual provider handling is configured in initializers
-  post "webhooks/:provider", to: "webhooks#create", as: :webhook
+  #
+  # The constraint checks mount_webhooks_in_engine? at request time, allowing
+  # users to disable engine webhooks via config and mount them separately at
+  # a different path (e.g., /webhooks/sent_emails instead of /admin/sent_emails/webhooks)
+  post "webhooks/:provider",
+    to: "webhooks#create",
+    as: :webhook,
+    constraints: ->(_request) { SentEmails.mount_webhooks_in_engine? }
 end

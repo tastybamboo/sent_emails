@@ -170,5 +170,34 @@ module SentEmails
     def primary_key_type
       configuration.primary_key_type
     end
+
+    # Check if webhooks should be mounted within the engine
+    # @return [Boolean] True if webhooks should be included in engine routes
+    def mount_webhooks_in_engine?
+      configuration.mount_webhooks_in_engine
+    end
+
+    # Mount webhook routes separately from the main engine
+    #
+    # Use this when you want webhooks at a different path than the admin UI.
+    # For example, mount the UI at /admin/sent_emails but webhooks at /webhooks/sent_emails.
+    #
+    # @param router [ActionDispatch::Routing::RouteSet] The router to mount routes on
+    # @param at [String] The path prefix for webhook routes (default: "/webhooks/sent_emails")
+    #
+    # @example Mount webhooks at a custom path
+    #   # config/initializers/sent_emails.rb
+    #   SentEmails.configure do |config|
+    #     config.mount_webhooks_in_engine = false
+    #   end
+    #
+    #   # config/routes.rb
+    #   mount SentEmails::Engine, at: "/admin/sent_emails"
+    #   SentEmails.mount_webhook_routes(self, at: "/webhooks/sent_emails")
+    #
+    def mount_webhook_routes(router, at: "/webhooks/sent_emails")
+      path_prefix = at.chomp("/")
+      router.post "#{path_prefix}/:provider", to: "sent_emails/webhooks#create"
+    end
   end
 end

@@ -165,6 +165,35 @@ Available routes:
 | `DELETE /admin/sent_emails/:id` | Delete email |
 | `POST /admin/sent_emails/webhooks/:provider` | Webhook endpoint |
 
+### Separate Webhook Path
+
+By default, webhooks are mounted within the engine. If you want webhooks at a different path (e.g., to keep `/admin` routes protected while webhooks remain publicly accessible), you can mount them separately:
+
+```ruby
+# config/initializers/sent_emails.rb
+SentEmails.configure do |config|
+  config.mount_webhooks_in_engine = false
+  # ... other config
+end
+```
+
+```ruby
+# config/routes.rb
+mount SentEmails::Engine, at: "/admin/sent_emails"
+SentEmails.mount_webhook_routes(self, at: "/webhooks/sent_emails")
+```
+
+This gives you:
+
+- UI at `/admin/sent_emails` (can be protected by admin authentication)
+- Webhooks at `/webhooks/sent_emails/:provider` (publicly accessible for email providers)
+
+Set your webhook URL in Mailpace to:
+
+```
+https://yourapp.com/webhooks/sent_emails/mailpace
+```
+
 ## Supported Providers
 
 ### Currently Supported
