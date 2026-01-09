@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 module SentEmails
+  # Automatically patches ActionMailer::MessageDelivery to capture all emails
+  # before they're delivered, including Devise emails and custom mailers.
+  #
+  # This works by prepending a module that intercepts deliver_now and deliver_later.
   module ActionMailerHook
     def deliver_now
       capture_email_before_delivery
