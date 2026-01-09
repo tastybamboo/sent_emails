@@ -29,13 +29,34 @@ module SentEmails
   # This works by prepending a module that intercepts deliver_now and deliver_later.
   module ActionMailerHook
     def deliver_now
+      @_delivery_type = "deliver_now"
+      capture_request_context
       capture_email_before_delivery
       super
+    ensure
+      clear_request_context
     end
 
     def deliver_later(*)
+      @_delivery_type = "deliver_later"
+      capture_request_context
       capture_email_before_delivery
       super
+    ensure
+      clear_request_context
+    end
+
+    def capture_request_context
+      # Store current request in thread-local storage for the capture
+      return unless defined?(ActionDispatch::Request)
+      request = ActionDispatch::Base.current_request
+      Thread.current[:__sent_emails_request] = request if request
+    rescue
+      # Silently ignore if we can't get the request
+    end
+
+    def clear_request_context
+      Thread.current.delete(:__sent_emails_request)
     end
 
     private
@@ -50,11 +71,26 @@ module SentEmails
         action: @action,
         params: @args.first || {},
         delivery_method: extract_delivery_method,
-        delivery_settings: extract_delivery_settings
+        delivery_settings: extract_delivery_settings,
+        delivery_type: extract_delivery_type,
+        request: extract_request_context
       )
     rescue => e
       Rails.logger.error("[SentEmails] Failed to capture email: #{e.message}")
       Rails.logger.error(e.backtrace.first(5).join("\n")) if e.backtrace
+    end
+
+    def extract_delivery_type
+      # Will be set by the wrapper in deliver_now/deliver_later
+      @_delivery_type ||= "unknown"
+    end
+
+    def extract_request_context
+      # Try to get Rails request context if available
+      return nil unless defined?(ActionDispatch::Request)
+      Thread.current[:__sent_emails_request]
+    rescue
+      nil
     end
 
     def extract_delivery_method

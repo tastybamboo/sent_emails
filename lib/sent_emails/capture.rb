@@ -9,13 +9,15 @@ module SentEmails
       new(**args).call
     end
 
-    def initialize(message:, mailer:, action:, params:, delivery_method:, delivery_settings:)
+    def initialize(message:, mailer:, action:, params:, delivery_method:, delivery_settings:, delivery_type: nil, request: nil)
       @message = message
       @mailer = mailer
       @action = action
       @params = params
       @delivery_method = delivery_method
       @delivery_settings = delivery_settings
+      @delivery_type = delivery_type
+      @request = request
     end
 
     def call
@@ -42,6 +44,17 @@ module SentEmails
         text_body: extract_text_body,
         html_body: extract_html_body,
         headers: extract_headers,
+
+        # Environment and context
+        environment: Rails.env,
+        delivery_type: @delivery_type,
+        process_type: detect_process_type,
+        request_id: extract_request_id,
+        user_agent: extract_user_agent,
+        remote_ip: extract_remote_ip,
+        ruby_version: RUBY_VERSION,
+        rails_version: Rails::VERSION::STRING,
+        context: build_context,
 
         status: :sent,
         sent_at: Time.current
@@ -200,6 +213,57 @@ module SentEmails
 
         email.attachments.create!(attrs)
       end
+    end
+
+    def detect_process_type
+      return "job" if defined?(Sidekiq) && Sidekiq.server?
+      return "job" if defined?(Delayed) && ENV["DELAYED_JOB"] == "true"
+      return "web" if defined?(ActionDispatch::Request)
+      return "console" if defined?(IRB) || $0.include?("irb")
+      return "runner" if $0.include?("rails") && ARGV.first == "runner"
+      "unknown"
+    end
+
+    def extract_request_id
+      return nil unless @request
+      @request.request_id
+    rescue
+      nil
+    end
+
+    def extract_user_agent
+      return nil unless @request
+      @request.user_agent
+    rescue
+      nil
+    end
+
+    def extract_remote_ip
+      return nil unless @request
+      @request.remote_ip
+    rescue
+      nil
+    end
+
+    def build_context
+      context = {}
+      
+      if @request
+        context[:request] = {
+          method: @request.method,
+          path: @request.path,
+          host: @request.host,
+          port: @request.port
+        }
+      end
+
+      context[:current_user_id] = extract_current_user if defined?(current_user)
+      context
+    end
+
+    def extract_current_user
+      return nil unless defined?(current_user)
+      current_user&.id rescue nil
     end
   end
 end
