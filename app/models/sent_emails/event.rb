@@ -5,6 +5,7 @@ module SentEmails
     self.table_name = "sent_emails_events"
 
     belongs_to :email
+    after_create :update_email_latest_event_cache
 
     validates :event_type, presence: true
     validates :occurred_at, presence: true
@@ -69,6 +70,16 @@ module SentEmails
       else
         "bg-gray-100 text-gray-800"
       end
+    end
+
+    private
+
+    # Update the cached latest event on the email
+    def update_email_latest_event_cache
+      email.update_columns(
+        latest_event_type: event_type,
+        latest_event_at: occurred_at
+      )
     end
   end
 end

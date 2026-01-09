@@ -11,5 +11,12 @@ module SentEmails
     initializer "sent_emails.assets" do |app|
       app.config.assets.precompile += %w[sent_emails/application.css] if app.config.respond_to?(:assets)
     end
+
+    # Automatically include MailerHelper in all ActionMailer::Base subclasses
+    initializer "sent_emails.include_mailer_helper" do
+      ActiveSupport.on_load(:action_mailer) do
+        include SentEmails::MailerHelper
+      end
+    end
   end
 end

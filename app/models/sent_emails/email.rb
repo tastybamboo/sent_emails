@@ -64,8 +64,14 @@ module SentEmails
       end
     }
 
+    # Eager load events for performance
+    scope :with_events, -> { includes(:events) }
+
     # Latest status based on events
     def latest_event
+      # Use already-loaded events if available (from eager loading)
+      return events.max_by(&:occurred_at) if events.loaded?
+      # Otherwise query database
       events.order(occurred_at: :desc).first
     end
 

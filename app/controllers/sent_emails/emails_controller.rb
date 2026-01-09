@@ -7,7 +7,7 @@ module SentEmails
     before_action :set_email, only: [:show, :destroy, :resend]
 
     def index
-      @emails = Email.recent
+      @emails = Email.recent.with_events
 
       if params[:status].present?
         @emails = @emails.by_status(params[:status])
@@ -22,6 +22,7 @@ module SentEmails
     end
 
     def show
+      @email = @email.includes(:events, :attachments)
       @events = @email.events.reverse_chronological
       @attachments = @email.attachments
     end
@@ -59,16 +60,18 @@ module SentEmails
 
     def paginate(scope, per_page: 25)
       page = [params[:page].to_i, 1].max
-      total_count = scope.count
-      total_pages = (total_count.to_f / per_page).ceil
-
-      records = scope.offset((page - 1) * per_page).limit(per_page)
-
+      offset = (page - 1) * per_page
+      
+      # Fetch one extra record to detect if there are more pages without a COUNT query
+      records = scope.offset(offset).limit(per_page + 1).load
+      
+      has_more = records.size > per_page
+      records = records.first(per_page) if has_more
+      
       # Add pagination methods to the result
       records.define_singleton_method(:current_page) { page }
-      records.define_singleton_method(:total_pages) { total_pages }
-      records.define_singleton_method(:total_count) { total_count }
-
+      records.define_singleton_method(:has_more) { has_more }
+      
       records
     end
   end
