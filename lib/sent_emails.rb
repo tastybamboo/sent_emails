@@ -2,6 +2,7 @@
 
 require_relative "sent_emails/version"
 require_relative "sent_emails/configuration"
+require_relative "sent_emails/action_mailer_hook"
 require_relative "sent_emails/engine"
 require_relative "sent_emails/mailer_helper"
 require_relative "sent_emails/capture"

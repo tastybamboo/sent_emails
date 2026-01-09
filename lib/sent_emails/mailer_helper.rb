@@ -5,13 +5,21 @@ module SentEmails
     extend ActiveSupport::Concern
 
     included do
-      after_deliver :capture_sent_email
+      # Hook into the deliver callback which works for all delivery methods
+      # wrap the deliver method to capture before actual delivery
+      alias_method :original_deliver, :deliver
+      
+      def deliver(...)
+        capture_sent_email_before_delivery
+        original_deliver(...)
+      end
     end
 
     private
 
-    def capture_sent_email
+    def capture_sent_email_before_delivery
       return unless SentEmails.enabled?
+      return unless message
 
       SentEmails::Capture.call(
         message: message,
