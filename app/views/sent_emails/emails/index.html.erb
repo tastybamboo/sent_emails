@@ -14,20 +14,20 @@
         placeholder: "Search by recipient or subject...",
         class: "block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6" %>
     </div>
-    <div>
-      <%= f.select :status,
-        options_for_select([
-          ["All Statuses", ""],
-          ["Pending", "pending"],
-          ["Queued", "queued"],
-          ["Sent", "sent"],
-          ["Delivered", "delivered"],
-          ["Bounced", "bounced"],
-          ["Failed", "failed"],
-          ["Spam", "spam"]
-        ], params[:status]),
-        {},
-        class: "block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6" %>
+    <div class="relative">
+      <select name="status" class="appearance-none block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6 bg-white cursor-pointer">
+        <option value=""><%= params[:status].blank? ? "All Statuses" : "All Statuses" %></option>
+        <option value="pending" <%= "selected" if params[:status] == "pending" %>>Pending</option>
+        <option value="queued" <%= "selected" if params[:status] == "queued" %>>Queued</option>
+        <option value="sent" <%= "selected" if params[:status] == "sent" %>>Sent</option>
+        <option value="delivered" <%= "selected" if params[:status] == "delivered" %>>Delivered</option>
+        <option value="bounced" <%= "selected" if params[:status] == "bounced" %>>Bounced</option>
+        <option value="failed" <%= "selected" if params[:status] == "failed" %>>Failed</option>
+        <option value="spam" <%= "selected" if params[:status] == "spam" %>>Spam</option>
+      </select>
+      <svg class="pointer-events-none absolute right-3 top-2.5 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+      </svg>
     </div>
     <div>
       <%= f.submit "Filter", class: "inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 cursor-pointer" %>
@@ -130,3 +130,9 @@
     </div>
   </nav>
 <% end %>
+
+<!-- Footer -->
+<div class="mt-12 border-t border-gray-200 pt-8 pb-6 text-center">
+  <p class="text-sm text-gray-500 mb-4">Powered by Sent Emails from Tasty Bamboo</p>
+  <%= image_tag "panda.svg", alt: "Tasty Bamboo", class: "h-6 mx-auto opacity-60 hover:opacity-100 transition-opacity" %>
+</div>
