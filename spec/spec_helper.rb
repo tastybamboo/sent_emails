@@ -32,6 +32,9 @@ RSpec.configure do |config|
     c.syntax = :expect
   end
 
+  # Include SentEmails test helpers for all specs
+  config.include SentEmails::TestHelpers
+
   # Shoulda matchers
   Shoulda::Matchers.configure do |shoulda_config|
     shoulda_config.integrate do |with|

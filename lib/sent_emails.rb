@@ -7,6 +7,7 @@ require_relative "sent_emails/mailer_helper"
 require_relative "sent_emails/capture"
 require_relative "sent_emails/providers/base"
 require_relative "sent_emails/providers/mailpace"
+require_relative "sent_emails/test_helpers"
 
 # SentEmails is a Rails engine that captures sent emails with full content,
 # tracks delivery status via webhooks, and provides an admin UI for viewing
