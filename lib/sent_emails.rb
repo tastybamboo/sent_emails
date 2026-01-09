@@ -9,8 +9,6 @@ require_relative "sent_emails/providers/base"
 require_relative "sent_emails/providers/mailpace"
 require_relative "sent_emails/test_helpers"
 
-# Note: action_mailer_hook is loaded by the engine initializer after ActionMailer is available
-
 # SentEmails is a Rails engine that captures sent emails with full content,
 # tracks delivery status via webhooks, and provides an admin UI for viewing
 # and resending emails.
@@ -24,6 +22,54 @@ require_relative "sent_emails/test_helpers"
 #   end
 module SentEmails
   class Error < StandardError; end
+
+  # Automatically patches ActionMailer::MessageDelivery to capture all emails
+  # before they're delivered, including Devise emails and custom mailers.
+  #
+  # This works by prepending a module that intercepts deliver_now and deliver_later.
+  module ActionMailerHook
+    def deliver_now
+      capture_email_before_delivery
+      super
+    end
+
+    def deliver_later(*)
+      capture_email_before_delivery
+      super
+    end
+
+    private
+
+    def capture_email_before_delivery
+      return unless SentEmails.enabled?
+      return unless @mail_message
+
+      SentEmails::Capture.call(
+        message: @mail_message,
+        mailer: @mailer_class.name,
+        action: @action,
+        params: @args.first || {},
+        delivery_method: extract_delivery_method,
+        delivery_settings: extract_delivery_settings
+      )
+    rescue => e
+      Rails.logger.error("[SentEmails] Failed to capture email: #{e.message}")
+      Rails.logger.error(e.backtrace.first(5).join("\n")) if e.backtrace
+    end
+
+    def extract_delivery_method
+      @mail_message.delivery_method.class.name.demodulize.underscore.to_sym
+    rescue
+      :unknown
+    end
+
+    def extract_delivery_settings
+      settings = @mail_message.delivery_method.settings
+      settings.is_a?(Hash) ? settings : {}
+    rescue
+      {}
+    end
+  end
 
   class << self
     # Get the current configuration

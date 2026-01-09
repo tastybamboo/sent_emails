@@ -49,3 +49,15 @@ module SentEmails
     end
   end
 end
+
+# Apply the hook as soon as ActionMailer is available
+# This works in all environments: web server, console, runner, tests
+if defined?(ActionMailer::MessageDelivery)
+  # If ActionMailer is already loaded, prepend immediately
+  ActionMailer::MessageDelivery.prepend(SentEmails::ActionMailerHook)
+else
+  # Otherwise, wait for ActionMailer to load
+  ActiveSupport.on_load(:action_mailer) do
+    ActionMailer::MessageDelivery.prepend(SentEmails::ActionMailerHook)
+  end
+end

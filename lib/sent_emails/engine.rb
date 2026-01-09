@@ -12,17 +12,20 @@ module SentEmails
       app.config.assets.precompile += %w[sent_emails/application.css] if app.config.respond_to?(:assets)
     end
 
-    # Automatically patch ActionMailer to capture emails
-    # This hook allows Devise and other mailers to be captured without modification
-    initializer "sent_emails.hook_mailer_delivery" do |app|
-      require_relative "action_mailer_hook"
-      
+    # Hook into ActionMailer to automatically capture all emails
+    # Use both to_prepare (for console/runner) and eager_load! (for web server)
+    initializer "sent_emails.hook_action_mailer" do |app|
+      # Set up to_prepare callback for console/runner/tests
       app.config.to_prepare do
-        ActionMailer::MessageDelivery.prepend(SentEmails::ActionMailerHook)
+        if defined?(ActionMailer::MessageDelivery) && !ActionMailer::MessageDelivery.ancestors.include?(SentEmails::ActionMailerHook)
+          ActionMailer::MessageDelivery.prepend(SentEmails::ActionMailerHook)
+        end
       end
       
-      # Also prepend immediately in case we're already past the to_prepare phase
-      ActionMailer::MessageDelivery.prepend(SentEmails::ActionMailerHook) if defined?(ActionMailer::MessageDelivery)
+      # Also try immediately in case we're past that phase
+      if defined?(ActionMailer::MessageDelivery) && !ActionMailer::MessageDelivery.ancestors.include?(SentEmails::ActionMailerHook)
+        ActionMailer::MessageDelivery.prepend(SentEmails::ActionMailerHook)
+      end
     end
   end
 end
