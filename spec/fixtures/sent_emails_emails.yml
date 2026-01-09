@@ -1,0 +1,84 @@
+# frozen_string_literal: true
+
+basic_email:
+  id: 1
+  message_id: "<test-1@example.com>"
+  mailer: "TestMailer"
+  action: "welcome_email"
+  template_path: "test_mailer/welcome_email"
+  mailer_params: {}
+  delivery_method: "smtp"
+  provider: "mailpace"
+  delivery_settings:
+    address: "smtp.mailpace.com"
+    port: 587
+  from_address: "noreply@example.com"
+  to_addresses:
+    - "user@example.com"
+  cc_addresses: []
+  bcc_addresses: []
+  subject: "Welcome to our service"
+  text_body: "Welcome! This is your welcome email."
+  html_body: "<p>Welcome! This is your welcome email.</p>"
+  headers: {}
+  status: "sent"
+  sent_at: <%= Time.current.inspect %>
+  delivered_at:
+  created_at: <%= Time.current.inspect %>
+  updated_at: <%= Time.current.inspect %>
+
+delivered_email:
+  id: 2
+  message_id: "<test-2@example.com>"
+  mailer: "TestMailer"
+  action: "notification_email"
+  template_path: "test_mailer/notification_email"
+  mailer_params:
+    user_id: 1
+  delivery_method: "smtp"
+  provider: "mailpace"
+  delivery_settings:
+    address: "smtp.mailpace.com"
+    port: 587
+  from_address: "noreply@example.com"
+  to_addresses:
+    - "recipient@example.com"
+    - "other@example.com"
+  cc_addresses:
+    - "cc@example.com"
+  bcc_addresses:
+    - "bcc@example.com"
+  subject: "Your notification"
+  text_body: "You have a new notification."
+  html_body: "<p>You have a new notification.</p>"
+  headers: {}
+  status: "delivered"
+  sent_at: <%= (Time.current - 2.hours).inspect %>
+  delivered_at: <%= Time.current.inspect %>
+  created_at: <%= (Time.current - 2.hours).inspect %>
+  updated_at: <%= Time.current.inspect %>
+
+old_email:
+  id: 3
+  message_id: "<test-3@example.com>"
+  mailer: "AnotherMailer"
+  action: "report"
+  template_path: "another_mailer/report"
+  mailer_params: {}
+  delivery_method: "smtp"
+  provider: "smtp"
+  delivery_settings: {}
+  from_address: "system@example.com"
+  to_addresses:
+    - "admin@example.com"
+  cc_addresses: []
+  bcc_addresses: []
+  subject: "Daily report"
+  text_body: "Here is your daily report."
+  html_body: "<p>Here is your daily report.</p>"
+  headers: {}
+  status: "bounced"
+  sent_at: <%= (Time.current - 5.days).inspect %>
+  delivered_at:
+  created_at: <%= (Time.current - 5.days).inspect %>
+  updated_at: <%= (Time.current - 5.days).inspect %>

@@ -1,0 +1,21 @@
+# frozen_string_literal: true
+
+pdf_attachment:
+  id: 1
+  email_id: 1
+  filename: "invoice.pdf"
+  content_type: "application/pdf"
+  byte_size: 2048
+  blob:
+  created_at: <%= Time.current.inspect %>
+  updated_at: <%= Time.current.inspect %>
+
+image_attachment:
+  id: 2
+  email_id: 2
+  filename: "logo.png"
+  content_type: "image/png"
+  byte_size: 5120
+  blob:
+  created_at: <%= Time.current.inspect %>
+  updated_at: <%= Time.current.inspect %>

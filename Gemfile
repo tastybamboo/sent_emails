@@ -10,6 +10,7 @@ gem "rake", "~> 13.0"
 
 # Testing
 gem "rspec-rails", "~> 8.0"
+gem "shoulda-matchers", "~> 6.0"
 
 # Linting
 gem "standard", require: false

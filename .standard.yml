@@ -1,0 +1,13 @@
+# Standard Ruby linting configuration
+# https://github.com/standardrb/standard
+
+ruby_version: 3.1
+
+ignore_patterns:
+  - bin/**/*
+  - coverage/**/*
+  - node_modules/**/*
+  - spec/dummy/**/*
+  - db/migrate/**/*
+  - vendor/**/*
+

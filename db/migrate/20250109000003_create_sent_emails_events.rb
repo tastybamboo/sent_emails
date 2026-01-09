@@ -2,11 +2,11 @@
 
 class CreateSentEmailsEvents < ActiveRecord::Migration[7.0]
   def change
-    create_table :sent_emails_events do |t|
-      t.references :email, null: false, foreign_key: {to_table: :sent_emails_emails}
+    create_table :sent_emails_events, id: :bigint do |t|
+      t.references :email, null: false, foreign_key: {to_table: :sent_emails_emails}, type: :bigint
       t.string :event_type, null: false
       t.string :provider
-      t.jsonb :payload, default: {}
+      t.json :payload, default: {}
       t.datetime :occurred_at, null: false
 
       t.timestamps

@@ -4,6 +4,11 @@ SentEmails.configure do |config|
   # Enable/disable email capture (default: true)
   # config.enabled = true
 
+  # Primary key type for email records (default: :bigint)
+  # Use :uuid for UUID primary keys (requires database support)
+  # This must be set BEFORE running migrations
+  # config.primary_key_type = :bigint
+
   # Attachment storage strategy
   # Options: :database (store in blob column), :metadata_only (store only metadata)
   # config.attachment_storage = :database

@@ -8,7 +8,8 @@ module SentEmails
       :retention_period,
       :authentication_method,
       :base_controller,
-      :providers
+      :providers,
+      :primary_key_type
 
     def initialize
       @enabled = true
@@ -18,6 +19,7 @@ module SentEmails
       @authentication_method = nil
       @base_controller = "ApplicationController"
       @providers = {}
+      @primary_key_type = :bigint # :bigint or :uuid
     end
 
     # Configure a specific provider

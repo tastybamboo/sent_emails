@@ -2,11 +2,11 @@
 
 class CreateSentEmailsEvents < ActiveRecord::Migration[<%= ActiveRecord::Migration.current_version %>]
   def change
-    create_table :sent_emails_events do |t|
-      t.references :email, null: false, foreign_key: {to_table: :sent_emails_emails}
+    create_table :sent_emails_events, id: :bigint do |t|
+      t.references :email, null: false, foreign_key: {to_table: :sent_emails_emails}, type: :bigint
       t.string :event_type, null: false
       t.string :provider
-      t.jsonb :payload, default: {}
+      t.public_send(json_type, :payload, default: {})
       t.datetime :occurred_at, null: false
 
       t.timestamps
@@ -14,5 +14,15 @@ class CreateSentEmailsEvents < ActiveRecord::Migration[<%= ActiveRecord::Migrati
 
     add_index :sent_emails_events, [:email_id, :event_type]
     add_index :sent_emails_events, :occurred_at
+  end
+
+  private
+
+  def postgresql?
+    connection.adapter_name.downcase == "postgresql"
+  end
+
+  def json_type
+    postgresql? ? :jsonb : :json
   end
 end

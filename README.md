@@ -28,6 +28,25 @@ rails generate sent_emails:install
 rails db:migrate
 ```
 
+## Database Support
+
+The gem works with any Rails-supported database, with optimizations for PostgreSQL:
+
+### PostgreSQL (Recommended)
+- **JSONB columns** for email metadata (mailer_params, delivery_settings, headers, payload)
+- **Array columns** for recipient lists (to_addresses, cc_addresses, bcc_addresses)
+- **Native array operators** - `ANY()` for fast recipient searches
+- **GIN indexes** on array columns for optimal performance at scale
+- **ILIKE operator** for case-insensitive text searches
+
+### SQLite, MySQL, MariaDB
+- **JSON columns** for metadata
+- **JSON columns** for recipient lists
+- **LIKE operator** for text searches (case-insensitive in SQLite)
+- All queries automatically adapted to use JSON functions instead of arrays
+
+The gem detects your database at migration time and generates appropriate schema. No configuration needed.
+
 ## Configuration
 
 ### Include the MailerHelper
