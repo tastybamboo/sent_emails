@@ -13,8 +13,16 @@ module SentEmails
     end
 
     # Automatically patch ActionMailer to capture emails
-    initializer "sent_emails.hook_action_mailer", after: :load_config_initializers do
-      ActionMailer::MessageDelivery.prepend(SentEmails::ActionMailerHook)
+    # Use both to_prepare and an initializer to ensure coverage in all environments
+    initializer "sent_emails.hook_mailer_delivery" do |app|
+      require "sent_emails/action_mailer_hook"
+      
+      app.config.to_prepare do
+        ActionMailer::MessageDelivery.prepend(SentEmails::ActionMailerHook)
+      end
+      
+      # Also call it now in case we're already past the to_prepare phase
+      ActionMailer::MessageDelivery.prepend(SentEmails::ActionMailerHook) if defined?(ActionMailer::MessageDelivery)
     end
   end
 end

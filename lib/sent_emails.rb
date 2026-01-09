@@ -2,13 +2,14 @@
 
 require_relative "sent_emails/version"
 require_relative "sent_emails/configuration"
-require_relative "sent_emails/action_mailer_hook"
 require_relative "sent_emails/engine"
 require_relative "sent_emails/mailer_helper"
 require_relative "sent_emails/capture"
 require_relative "sent_emails/providers/base"
 require_relative "sent_emails/providers/mailpace"
 require_relative "sent_emails/test_helpers"
+
+# Note: action_mailer_hook is loaded by the engine initializer after ActionMailer is available
 
 # SentEmails is a Rails engine that captures sent emails with full content,
 # tracks delivery status via webhooks, and provides an admin UI for viewing
