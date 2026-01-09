@@ -1,0 +1,18 @@
+# frozen_string_literal: true
+
+class CreateSentEmailsEvents < ActiveRecord::Migration[<%= ActiveRecord::Migration.current_version %>]
+  def change
+    create_table :sent_emails_events do |t|
+      t.references :email, null: false, foreign_key: {to_table: :sent_emails_emails}
+      t.string :event_type, null: false
+      t.string :provider
+      t.jsonb :payload, default: {}
+      t.datetime :occurred_at, null: false
+
+      t.timestamps
+    end
+
+    add_index :sent_emails_events, [:email_id, :event_type]
+    add_index :sent_emails_events, :occurred_at
+  end
+end

@@ -1,0 +1,45 @@
+# frozen_string_literal: true
+
+class CreateSentEmailsEmails < ActiveRecord::Migration[<%= ActiveRecord::Migration.current_version %>]
+  def change
+    create_table :sent_emails_emails do |t|
+      t.uuid :uuid, null: false, default: -> { "gen_random_uuid()" }
+      t.string :message_id
+
+      # Rails context
+      t.string :mailer
+      t.string :action
+      t.string :template_path
+      t.jsonb :mailer_params, default: {}
+
+      # Delivery mechanism
+      t.string :delivery_method
+      t.string :provider
+      t.jsonb :delivery_settings, default: {}
+
+      # Email content
+      t.string :from_address, null: false
+      t.string :to_addresses, array: true, default: [], null: false
+      t.string :cc_addresses, array: true, default: []
+      t.string :bcc_addresses, array: true, default: []
+      t.string :subject
+      t.text :text_body
+      t.text :html_body
+      t.jsonb :headers, default: {}
+
+      # Status tracking
+      t.string :status, default: "pending", null: false
+      t.datetime :sent_at
+      t.datetime :delivered_at
+
+      t.timestamps
+    end
+
+    add_index :sent_emails_emails, :uuid, unique: true
+    add_index :sent_emails_emails, :message_id, unique: true
+    add_index :sent_emails_emails, :to_addresses, using: :gin
+    add_index :sent_emails_emails, :status
+    add_index :sent_emails_emails, :created_at
+    add_index :sent_emails_emails, :mailer
+  end
+end

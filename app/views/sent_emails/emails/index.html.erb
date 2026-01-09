@@ -1,0 +1,132 @@
+<div class="sm:flex sm:items-center">
+  <div class="sm:flex-auto">
+    <h1 class="text-2xl font-semibold text-gray-900">Sent Emails</h1>
+    <p class="mt-2 text-sm text-gray-700">A list of all emails sent from your application.</p>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="mt-6 flex flex-col sm:flex-row gap-4">
+  <%= form_with url: emails_path, method: :get, class: "flex flex-col sm:flex-row gap-4 flex-1" do |f| %>
+    <div class="flex-1">
+      <%= f.text_field :q,
+        value: params[:q],
+        placeholder: "Search by recipient or subject...",
+        class: "block w-full rounded-md border-0 py-1.5 px-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6" %>
+    </div>
+    <div>
+      <%= f.select :status,
+        options_for_select([
+          ["All Statuses", ""],
+          ["Pending", "pending"],
+          ["Queued", "queued"],
+          ["Sent", "sent"],
+          ["Delivered", "delivered"],
+          ["Bounced", "bounced"],
+          ["Failed", "failed"],
+          ["Spam", "spam"]
+        ], params[:status]),
+        {},
+        class: "block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-blue-600 sm:text-sm sm:leading-6" %>
+    </div>
+    <div>
+      <%= f.submit "Filter", class: "inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 cursor-pointer" %>
+    </div>
+  <% end %>
+</div>
+
+<!-- Email list -->
+<div class="mt-8 flow-root">
+  <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+    <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+      <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
+        <table class="min-w-full divide-y divide-gray-300">
+          <thead class="bg-gray-50">
+            <tr>
+              <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">To</th>
+              <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Subject</th>
+              <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Mailer</th>
+              <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
+              <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Sent</th>
+              <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6">
+                <span class="sr-only">View</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 bg-white">
+            <% @emails.each do |email| %>
+              <tr class="hover:bg-gray-50">
+                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
+                  <%= email.primary_recipient %>
+                  <% if email.to_addresses.size > 1 %>
+                    <span class="text-gray-500">+<%= email.to_addresses.size - 1 %></span>
+                  <% end %>
+                </td>
+                <td class="px-3 py-4 text-sm text-gray-500 max-w-xs truncate">
+                  <%= email.subject || "(no subject)" %>
+                </td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                  <code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded"><%= email.action %></code>
+                </td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm">
+                  <%= render partial: "sent_emails/emails/status_badge", locals: { status: email.status } %>
+                </td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                  <%= email.sent_at&.strftime("%b %d, %Y %H:%M") || email.created_at.strftime("%b %d, %Y %H:%M") %>
+                </td>
+                <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
+                  <%= link_to "View", email_path(email), class: "text-blue-600 hover:text-blue-900" %>
+                </td>
+              </tr>
+            <% end %>
+
+            <% if @emails.empty? %>
+              <tr>
+                <td colspan="6" class="px-6 py-12 text-center text-sm text-gray-500">
+                  <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                  <p class="mt-4 font-medium text-gray-900">No emails found</p>
+                  <p class="mt-1">Emails will appear here once they're sent from your application.</p>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Pagination -->
+<% if @emails.respond_to?(:total_pages) && @emails.total_pages > 1 %>
+  <nav class="mt-6 flex items-center justify-between border-t border-gray-200 px-4 sm:px-0">
+    <div class="-mt-px flex w-0 flex-1">
+      <% if @emails.current_page > 1 %>
+        <%= link_to emails_path(page: @emails.current_page - 1, q: params[:q], status: params[:status]),
+          class: "inline-flex items-center border-t-2 border-transparent pt-4 pr-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700" do %>
+          <svg class="mr-3 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M18 10a.75.75 0 01-.75.75H4.66l2.1 1.95a.75.75 0 11-1.02 1.1l-3.5-3.25a.75.75 0 010-1.1l3.5-3.25a.75.75 0 111.02 1.1l-2.1 1.95h12.59A.75.75 0 0118 10z" clip-rule="evenodd" />
+          </svg>
+          Previous
+        <% end %>
+      <% end %>
+    </div>
+    <div class="hidden md:-mt-px md:flex">
+      <span class="inline-flex items-center border-t-2 border-transparent px-4 pt-4 text-sm font-medium text-gray-500">
+        Page <%= @emails.current_page %> of <%= @emails.total_pages %>
+      </span>
+    </div>
+    <div class="-mt-px flex w-0 flex-1 justify-end">
+      <% if @emails.current_page < @emails.total_pages %>
+        <%= link_to emails_path(page: @emails.current_page + 1, q: params[:q], status: params[:status]),
+          class: "inline-flex items-center border-t-2 border-transparent pt-4 pl-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700" do %>
+          Next
+          <svg class="ml-3 h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M2 10a.75.75 0 01.75-.75h12.59l-2.1-1.95a.75.75 0 111.02-1.1l3.5 3.25a.75.75 0 010 1.1l-3.5 3.25a.75.75 0 11-1.02-1.1l2.1-1.95H2.75A.75.75 0 012 10z" clip-rule="evenodd" />
+          </svg>
+        <% end %>
+      <% end %>
+    </div>
+  </nav>
+<% end %>
