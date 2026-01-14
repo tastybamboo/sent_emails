@@ -85,6 +85,8 @@ end
 
 ### Configure Webhook Provider (Mailpace)
 
+To receive delivery status updates (delivered, bounced, spam, etc.), configure Mailpace webhook verification:
+
 ```ruby
 SentEmails.configure do |config|
   config.provider :mailpace do |p|
@@ -93,13 +95,50 @@ SentEmails.configure do |config|
 end
 ```
 
-Get your webhook public key from your [Mailpace dashboard](https://app.mailpace.com).
+**Important:** Without this configuration, all incoming webhooks will return **401 Unauthorized** because the gem cannot verify the Ed25519 signature.
+
+#### Getting Your Webhook Public Key
+
+1. Log in to [Mailpace](https://app.mailpace.com)
+2. Go to **Organization Settings** → **Webhooks**
+3. Copy the **Public Key** (a 64-character hex string)
+4. Add it to your Rails credentials:
+
+```bash
+rails credentials:edit
+```
+
+```yaml
+mailpace:
+  server_token: "your_smtp_token"
+  webhook_public_key: "your_64_char_hex_public_key"
+```
+
+#### Configuring the Webhook URL in Mailpace
 
 Set your webhook URL in Mailpace to:
 
 ```
 https://yourapp.com/admin/sent_emails/webhooks/mailpace
 ```
+
+Or if you've mounted webhooks separately (see [Separate Webhook Path](#separate-webhook-path)):
+
+```
+https://yourapp.com/webhooks/sent_emails/mailpace
+```
+
+#### Webhook Events
+
+Mailpace sends these events which are automatically processed:
+
+| Mailpace Event | SentEmails Status |
+|----------------|-------------------|
+| `email.queued` | `queued` |
+| `email.delivered` | `delivered` |
+| `email.deferred` | `deferred` |
+| `email.bounced` | `bounced` |
+| `email.spam` | `spam` |
 
 ## Usage
 
