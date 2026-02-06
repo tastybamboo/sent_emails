@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 SentEmails::Engine.routes.draw do
-  root to: redirect { |_params, request| "#{request.script_name}/emails" }
+  root to: redirect { |_params, request| "#{request.script_name.to_s.chomp("/")}/emails" }
 
   resources :emails, only: [:index, :show] do
     collection do
