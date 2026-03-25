@@ -22,5 +22,9 @@ gem "shoulda-matchers", "~> 6.0"
 gem "standard", require: false
 gem "standard-rails", require: false
 
-# Development
-gem "sqlite3"
+# Development — Rails 7.0 requires sqlite3 ~> 1.4; 7.1+ works with 2.x
+if Gem::Version.new(rails_version) < Gem::Version.new("7.1")
+  gem "sqlite3", "~> 1.4"
+else
+  gem "sqlite3"
+end

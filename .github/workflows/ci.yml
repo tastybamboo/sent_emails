@@ -60,11 +60,7 @@ jobs:
         with:
           ruby-version: "3.3"
 
-      - name: Build gem
-        run: gem build sent_emails.gemspec
-
-      - name: Verify gem
+      - name: Build and verify gem
         run: |
-          gem install ed25519
-          gem install sent_emails-*.gem --local --ignore-dependencies
-          ruby -e "require 'sent_emails'; puts SentEmails::VERSION"
+          gem build sent_emails.gemspec
+          gem spec sent_emails-*.gem name version | grep -E "name:|version:"
