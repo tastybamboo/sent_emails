@@ -60,4 +60,4 @@ jobs:
       - name: Verify gem
         run: |
           gem install sent_emails-*.gem
-          ruby -e "require 'sent_emails'; puts SentEmails::VERSION"
+          ruby -e "require 'rails'; require 'sent_emails'; puts SentEmails::VERSION"
