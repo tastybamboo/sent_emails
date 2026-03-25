@@ -41,6 +41,8 @@ module SentEmails
     #     end
     #   end
     def content_filter(&block)
+      raise ArgumentError, "content_filter requires a block" unless block_given?
+
       @content_filters << block
     end
 

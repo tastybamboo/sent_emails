@@ -161,6 +161,28 @@ RSpec.describe SentEmails::Email, type: :model do
     end
   end
 
+  describe "#redacted?" do
+    it "returns true when from_address is [REDACTED]" do
+      email = create_email(from_address: "[REDACTED]")
+      expect(email.redacted?).to be true
+    end
+
+    it "returns true when subject is [REDACTED]" do
+      email = create_email(subject: "[REDACTED]")
+      expect(email.redacted?).to be true
+    end
+
+    it "returns true when to_addresses contains [REDACTED]" do
+      email = create_email(to_addresses: ["[REDACTED]"])
+      expect(email.redacted?).to be true
+    end
+
+    it "returns false for normal emails" do
+      email = create_email
+      expect(email.redacted?).to be false
+    end
+  end
+
   describe "#archived?" do
     it "returns true when archived_at is set" do
       email = create_email(archived_at: 1.hour.ago)

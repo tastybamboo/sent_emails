@@ -64,9 +64,12 @@ module SentEmails
       # Allow registered filters to redact sensitive content before persistence
       SentEmails.apply_content_filters!(attrs)
 
+      # Extract internal control keys before persistence
+      skip_attachments = attrs.delete(:_skip_attachments)
+
       email = Email.create!(attrs)
 
-      capture_attachments(email) unless attrs[:_skip_attachments]
+      capture_attachments(email) unless skip_attachments
       create_initial_event(email)
       email
     end
