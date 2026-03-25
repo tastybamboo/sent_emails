@@ -11,7 +11,8 @@ module SentEmails
       :providers,
       :primary_key_type,
       :mount_webhooks_in_engine,
-      :content_filters
+      :content_filters,
+      :on_signature_failure
 
     def initialize
       @enabled = true
@@ -24,6 +25,7 @@ module SentEmails
       @primary_key_type = :bigint # :bigint or :uuid
       @mount_webhooks_in_engine = true # Set to false to mount webhooks separately
       @content_filters = []
+      @on_signature_failure = nil
     end
 
     # Register a content filter that runs before email content is persisted.

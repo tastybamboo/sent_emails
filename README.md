@@ -128,6 +128,22 @@ Or if you've mounted webhooks separately (see [Separate Webhook Path](#separate-
 https://yourapp.com/webhooks/sent_emails/mailpace
 ```
 
+#### Signature Failure Reporting
+
+By default, failed webhook signature verifications are logged as warnings. To report them to your error tracking service, configure the `on_signature_failure` callback:
+
+```ruby
+SentEmails.configure do |config|
+  config.on_signature_failure = ->(provider, request) {
+    Appsignal.send_error(
+      SentEmails::Error.new("Webhook signature verification failed for #{provider}")
+    )
+  }
+end
+```
+
+The callback receives the provider name (String) and the `ActionDispatch::Request` object.
+
 #### Webhook Events
 
 Mailpace sends these events which are automatically processed:

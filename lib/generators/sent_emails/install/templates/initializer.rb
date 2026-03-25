@@ -63,4 +63,14 @@ SentEmails.configure do |config|
   # config.provider :postmark do |p|
   #   p.webhook_token = Rails.application.credentials.dig(:postmark, :webhook_token)
   # end
+
+  # Optional: callback invoked when a webhook signature fails verification.
+  # Receives the provider name (String) and the ActionDispatch::Request.
+  # Use this to report failures to your error tracking service.
+  #
+  # config.on_signature_failure = ->(provider, request) {
+  #   Appsignal.send_error(
+  #     SentEmails::Error.new("Webhook signature verification failed for #{provider}")
+  #   )
+  # }
 end

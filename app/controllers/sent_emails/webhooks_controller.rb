@@ -46,8 +46,18 @@ module SentEmails
     def verify_signature
       unless @provider.valid_signature?
         Rails.logger.warn("[SentEmails] Invalid signature for #{params[:provider]} webhook")
+        notify_signature_failure
         head :unauthorized
       end
+    end
+
+    def notify_signature_failure
+      callback = SentEmails.configuration.on_signature_failure
+      return unless callback
+
+      callback.call(params[:provider], request)
+    rescue => e
+      Rails.logger.error("[SentEmails] on_signature_failure callback error: #{e.message}")
     end
 
     def provider_class
