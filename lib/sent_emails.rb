@@ -8,6 +8,7 @@ require_relative "sent_emails/capture"
 require_relative "sent_emails/request_middleware"
 require_relative "sent_emails/providers/base"
 require_relative "sent_emails/providers/mailpace"
+require_relative "sent_emails/providers/postmark"
 require_relative "sent_emails/test_helpers"
 
 # SentEmails is a Rails engine that captures sent emails with full content,
@@ -169,6 +170,19 @@ module SentEmails
     # @return [Symbol] The primary key type (:bigint or :uuid)
     def primary_key_type
       configuration.primary_key_type
+    end
+
+    # Apply registered content filters to email attributes before persistence.
+    # Filters can redact sensitive content (body, subject, addresses) for privacy.
+    # @param attrs [Hash] Email attributes hash (mutated in place)
+    # @return [Hash] The filtered attributes
+    def apply_content_filters!(attrs)
+      configuration.content_filters.each do |filter|
+        filter.call(attrs)
+      rescue => e
+        Rails.logger.error("[SentEmails] Content filter error: #{e.message}")
+      end
+      attrs
     end
 
     # Check if webhooks should be mounted within the engine

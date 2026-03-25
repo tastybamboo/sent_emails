@@ -10,7 +10,8 @@ module SentEmails
       :base_controller,
       :providers,
       :primary_key_type,
-      :mount_webhooks_in_engine
+      :mount_webhooks_in_engine,
+      :content_filters
 
     def initialize
       @enabled = true
@@ -22,6 +23,23 @@ module SentEmails
       @providers = {}
       @primary_key_type = :bigint # :bigint or :uuid
       @mount_webhooks_in_engine = true # Set to false to mount webhooks separately
+      @content_filters = []
+    end
+
+    # Register a content filter that runs before email content is persisted.
+    # Filters receive the email attributes hash and can modify it in place
+    # (e.g., redact body, subject, or to_addresses for privacy).
+    #
+    # Example:
+    #   config.content_filter do |attrs|
+    #     if attrs[:to_addresses]&.any? { |a| a.include?("sensitive") }
+    #       attrs[:text_body] = "[Content redacted]"
+    #       attrs[:html_body] = "[Content redacted]"
+    #       attrs[:subject] = "[Redacted]"
+    #     end
+    #   end
+    def content_filter(&block)
+      @content_filters << block
     end
 
     # Configure a specific provider

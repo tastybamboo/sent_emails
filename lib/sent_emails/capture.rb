@@ -22,7 +22,7 @@ module SentEmails
     end
 
     def call
-      email = Email.create!(
+      attrs = {
         message_id: @message.message_id,
 
         # Rails context
@@ -59,9 +59,14 @@ module SentEmails
 
         status: @status,
         sent_at: @status == :sent ? Time.current : nil
-      )
+      }
 
-      capture_attachments(email)
+      # Allow registered filters to redact sensitive content before persistence
+      SentEmails.apply_content_filters!(attrs)
+
+      email = Email.create!(attrs)
+
+      capture_attachments(email) unless attrs[:_skip_attachments]
       create_initial_event(email)
       email
     end

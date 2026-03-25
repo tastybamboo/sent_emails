@@ -7,5 +7,14 @@
 /spec/reports/
 /tmp/
 
+# Nested tmp and log directories (spec/dummy, etc.)
+**/tmp/
+**/log/
+*.log
+
 # rspec failure tracking
 .rspec_status
+
+# Environment files
+.env*
+!.env.example

@@ -48,14 +48,18 @@ module SentEmails
           email = find_email(event_data[:message_id])
           next unless email
 
+          event_payload = event_data[:payload]
+          event_payload = redact_event_payload(event_payload, email) if email.from_address == "[REDACTED]"
+
           event = email.events.create!(
             event_type: event_data[:event_type],
             provider: provider_name,
-            payload: event_data[:payload],
+            payload: event_payload,
             occurred_at: event_data[:occurred_at]
           )
 
           update_email_status(email, event_data[:event_type])
+          notify_subscribers(email, event)
           created_events << event
         end
 
@@ -63,6 +67,31 @@ module SentEmails
       end
 
       private
+
+      def notify_subscribers(email, event)
+        ActiveSupport::Notifications.instrument("event.sent_emails", {
+          email: email,
+          event: event,
+          event_type: event.event_type,
+          to: email.primary_recipient,
+          occurred_at: event.occurred_at
+        })
+      end
+
+      # Scrub PII from webhook event payloads for redacted emails
+      def redact_event_payload(payload, _email)
+        return payload unless payload.is_a?(Hash)
+        redacted = "[REDACTED]"
+        scrubbed = payload.deep_dup
+        %w[to from to_address from_address email recipient sender subject htmlbody textbody].each do |key|
+          scrubbed[key] = redacted if scrubbed.key?(key)
+          # Also check nested payload hash (MailPace nests under "payload")
+          if scrubbed["payload"].is_a?(Hash) && scrubbed["payload"].key?(key)
+            scrubbed["payload"][key] = redacted
+          end
+        end
+        scrubbed
+      end
 
       def find_email(message_id)
         return nil if message_id.blank?
