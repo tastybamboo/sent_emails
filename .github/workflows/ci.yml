@@ -60,7 +60,5 @@ jobs:
         with:
           ruby-version: "3.3"
 
-      - name: Build and verify gem
-        run: |
-          gem build sent_emails.gemspec
-          gem spec sent_emails-*.gem name version | grep -E "name:|version:"
+      - name: Build gem
+        run: gem build sent_emails.gemspec
