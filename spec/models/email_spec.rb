@@ -93,7 +93,7 @@ RSpec.describe SentEmails::Email, type: :model do
   describe "#latest_event" do
     it "returns the most recent event" do
       email = create_email
-      old_event = SentEmails::Event.create!(email: email, event_type: "queued", provider: "test", occurred_at: 1.hour.ago)
+      SentEmails::Event.create!(email: email, event_type: "queued", provider: "test", occurred_at: 1.hour.ago)
       new_event = SentEmails::Event.create!(email: email, event_type: "delivered", provider: "test", occurred_at: 30.minutes.ago)
 
       expect(email.latest_event).to eq(new_event)

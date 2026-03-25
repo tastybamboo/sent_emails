@@ -2,14 +2,20 @@
 
 source "https://rubygems.org"
 
-# Specify your gem's dependencies in sent_emails.gemspec
 gemspec
+
+rails_version = ENV.fetch("RAILS_VERSION", "7.2")
+gem "rails", "~> #{rails_version}.0"
 
 gem "irb"
 gem "rake", "~> 13.0"
 
-# Testing
-gem "rspec-rails", "~> 8.0"
+# Testing — rspec-rails 8.x requires Rails >= 7.2
+if Gem::Version.new(rails_version) >= Gem::Version.new("7.2")
+  gem "rspec-rails", "~> 8.0"
+else
+  gem "rspec-rails", "~> 7.0"
+end
 gem "shoulda-matchers", "~> 6.0"
 
 # Linting

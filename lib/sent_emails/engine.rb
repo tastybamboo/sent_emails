@@ -26,7 +26,7 @@ module SentEmails
           ActionMailer::MessageDelivery.prepend(SentEmails::ActionMailerHook)
         end
       end
-      
+
       # Also try immediately in case we're past that phase
       if defined?(ActionMailer::MessageDelivery) && !ActionMailer::MessageDelivery.ancestors.include?(SentEmails::ActionMailerHook)
         ActionMailer::MessageDelivery.prepend(SentEmails::ActionMailerHook)

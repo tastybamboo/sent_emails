@@ -81,7 +81,7 @@ module SentEmails
         )
 
         ActiveSupport::SecurityUtils.secure_compare(signature.downcase, expected.downcase)
-      rescue StandardError => e
+      rescue => e
         Rails.logger.warn("[SentEmails::Postmark] Signature verification failed: #{e.message}")
         false
       end

@@ -238,8 +238,6 @@ module SentEmails
       update!(archived_at: nil)
     end
 
-    private
-
     # Check if using PostgreSQL database
     # @return [Boolean]
     def self.using_postgresql?

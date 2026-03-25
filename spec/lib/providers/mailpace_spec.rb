@@ -108,7 +108,7 @@ RSpec.describe SentEmails::Providers::Mailpace do
 
   describe "#process!" do
     it "creates event for matching email" do
-      email = SentEmails::Email.create!(
+      SentEmails::Email.create!(
         from_address: "test@example.com",
         to_addresses: ["recipient@example.com"],
         message_id: "test-message-id",

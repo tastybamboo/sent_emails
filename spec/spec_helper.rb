@@ -55,4 +55,3 @@ RSpec.configure do |config|
     load File.expand_path("dummy/db/schema.rb", __dir__)
   end
 end
-
