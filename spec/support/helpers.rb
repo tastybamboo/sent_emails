@@ -15,8 +15,7 @@ module SpecHelpers
   def sign_mailpace_payload(payload_json, private_key_hex)
     require "ed25519"
     signing_key = Ed25519::SigningKey.new([private_key_hex].pack("H*"))
-    signature_hex = signing_key.sign(payload_json).unpack("H*")[0]
-    signature_hex
+    signing_key.sign(payload_json).unpack1("H*")
   end
 
   # Postmark helpers

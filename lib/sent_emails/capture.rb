@@ -58,7 +58,7 @@ module SentEmails
         context: build_context,
 
         status: @status,
-        sent_at: @status == :sent ? Time.current : nil
+        sent_at: (@status == :sent) ? Time.current : nil
       }
 
       # Allow registered filters to redact sensitive content before persistence
@@ -307,7 +307,7 @@ module SentEmails
 
     def build_context
       context = {}
-      
+
       if @request
         context[:request] = {
           method: @request.method,
@@ -323,7 +323,11 @@ module SentEmails
 
     def extract_current_user
       return nil unless defined?(current_user)
-      current_user&.id rescue nil
+      begin
+        current_user&.id
+      rescue
+        nil
+      end
     end
   end
 end

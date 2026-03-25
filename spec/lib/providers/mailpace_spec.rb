@@ -52,6 +52,23 @@ RSpec.describe SentEmails::Providers::Mailpace do
       provider = build_provider(payload, {}, raw_body)
       expect(provider.valid_signature?).to be false
     end
+
+    context "with base64-encoded public key" do
+      let(:public_key_base64) { Base64.strict_encode64([public_key_hex].pack("H*")) }
+
+      before do
+        SentEmails.configure do |config|
+          config.provider :mailpace do |p|
+            p.public_key = public_key_base64
+          end
+        end
+      end
+
+      it "returns true for valid signature" do
+        provider = build_provider
+        expect(provider.valid_signature?).to be true
+      end
+    end
   end
 
   describe "#events" do
@@ -91,7 +108,7 @@ RSpec.describe SentEmails::Providers::Mailpace do
 
   describe "#process!" do
     it "creates event for matching email" do
-      email = SentEmails::Email.create!(
+      SentEmails::Email.create!(
         from_address: "test@example.com",
         to_addresses: ["recipient@example.com"],
         message_id: "test-message-id",

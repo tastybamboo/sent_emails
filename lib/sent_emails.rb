@@ -95,7 +95,7 @@ module SentEmails
       elsif @args.is_a?(Array) && @args.first.is_a?(Hash)
         @args.first
       elsif @args.is_a?(Array) && @args.any?
-        @args.each_with_index.to_h { |arg, i| ["arg_#{i}".to_sym, arg] }
+        @args.each_with_index.to_h { |arg, i| [:"arg_#{i}", arg] }
       else
         {}
       end

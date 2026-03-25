@@ -43,8 +43,8 @@ module SentEmails
         SentEmails.provider_config(:mailpace)
       end
 
-      def verify_ed25519_signature(signature_hex, public_key_hex)
-        verify_key = Ed25519::VerifyKey.new([public_key_hex].pack("H*"))
+      def verify_ed25519_signature(signature_hex, public_key_value)
+        verify_key = Ed25519::VerifyKey.new(decode_key(public_key_value))
         signature_bytes = [signature_hex].pack("H*")
 
         # Mailpace signs the raw request body
@@ -53,6 +53,16 @@ module SentEmails
       rescue Ed25519::VerifyError, ArgumentError => e
         Rails.logger.warn("[SentEmails::Mailpace] Signature verification failed: #{e.message}")
         false
+      end
+
+      # Decode a public key from either hex or base64 encoding.
+      # Hex keys are 64 characters of [0-9a-fA-F]; everything else is treated as base64.
+      def decode_key(value)
+        if value.match?(/\A[0-9a-fA-F]{64}\z/)
+          [value].pack("H*")
+        else
+          Base64.strict_decode64(value)
+        end
       end
 
       def extract_message_id

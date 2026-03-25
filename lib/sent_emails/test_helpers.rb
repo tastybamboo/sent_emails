@@ -2,10 +2,10 @@
 
 module SentEmails
   # Test helpers for asserting on captured emails
-  # 
+  #
   # @example Basic usage in RSpec
   #   include SentEmails::TestHelpers
-  #   
+  #
   #   it "sends welcome email" do
   #     expect {
   #       UserMailer.welcome_email(user).deliver_now
@@ -20,7 +20,7 @@ module SentEmails
   #   before { clear_sent_emails }
   module TestHelpers
     # Find emails by recipient
-    # 
+    #
     # @param to [String] recipient email address
     # @return [ActiveRecord::Relation] matching emails
     def find_sent_emails(to:)
@@ -38,7 +38,7 @@ module SentEmails
     #   email = find_sent_email(to: "user@example.com", subject: "Welcome")
     def find_sent_email(to:, subject: nil)
       emails = find_sent_emails(to: to)
-      
+
       if subject
         if subject.is_a?(Regexp)
           emails.detect { |e| e.subject&.match?(subject) } ||
@@ -164,7 +164,7 @@ module SentEmails
 
     def find_matching_email
       emails = Email.to(@to)
-      
+
       if @subject
         if @subject.is_a?(Regexp)
           emails.detect { |e| e.subject&.match?(@subject) }
@@ -178,7 +178,7 @@ module SentEmails
 
     def subject_desc
       return "" unless @subject
-      
+
       if @subject.is_a?(Regexp)
         " with subject matching #{@subject.inspect}"
       else
