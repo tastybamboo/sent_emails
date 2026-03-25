@@ -98,10 +98,10 @@ module SentEmails
         case value
         when Hash
           value.each_with_object({}) do |(key, v), result|
-            if REDACTED_KEYS.include?(key.to_s.downcase)
-              result[key] = "[REDACTED]"
+            result[key] = if REDACTED_KEYS.include?(key.to_s.downcase)
+              "[REDACTED]"
             else
-              result[key] = redact_value(v)
+              redact_value(v)
             end
           end
         when Array

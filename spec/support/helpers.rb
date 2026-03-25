@@ -45,34 +45,6 @@ module SpecHelpers
       payload_json
     )
   end
-
-  # Postmark helpers
-  def build_postmark_webhook_payload(message_id:, record_type: "Delivery", **options)
-    base = {
-      "RecordType" => record_type,
-      "MessageID" => message_id,
-      "DeliveredAt" => Time.current.iso8601
-    }
-
-    # Add bounce-specific fields if this is a bounce
-    if record_type == "Bounce"
-      base["Type"] = options[:bounce_type] || "HardBounce"
-      base["TypeCode"] = options[:type_code] || 1
-      base["BouncedAt"] = Time.current.iso8601
-      base.delete("DeliveredAt")
-    end
-
-    base
-  end
-
-  def sign_postmark_payload(payload_json, webhook_token)
-    require "openssl"
-    OpenSSL::HMAC.hexdigest(
-      OpenSSL::Digest.new("sha256"),
-      webhook_token,
-      payload_json
-    )
-  end
 end
 
 RSpec.configure do |config|
