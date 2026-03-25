@@ -65,5 +65,6 @@ jobs:
 
       - name: Verify gem
         run: |
+          gem install ed25519
           gem install sent_emails-*.gem --local --ignore-dependencies
-          ruby -r ed25519 -e "require 'sent_emails'; puts SentEmails::VERSION"
+          ruby -e "require 'sent_emails'; puts SentEmails::VERSION"

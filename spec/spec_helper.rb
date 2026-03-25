@@ -20,8 +20,12 @@ RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
   config.example_status_persistence_file_path = ".rspec_status"
 
-  # Configure fixture path
-  config.fixture_paths = [File.expand_path("fixtures", __dir__)]
+  # Configure fixture path (fixture_paths= added in Rails 7.1)
+  if config.respond_to?(:fixture_paths=)
+    config.fixture_paths = [File.expand_path("fixtures", __dir__)]
+  else
+    config.fixture_path = File.expand_path("fixtures", __dir__)
+  end
 
   # Use transactions for faster tests
   config.use_transactional_fixtures = true
