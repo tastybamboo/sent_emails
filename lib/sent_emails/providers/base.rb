@@ -49,7 +49,7 @@ module SentEmails
           next unless email
 
           event_payload = event_data[:payload]
-          event_payload = redact_event_payload(event_payload, email) if email.from_address == "[REDACTED]"
+          event_payload = redact_event_payload(event_payload, email) if email.redacted?
 
           event = email.events.create!(
             event_type: event_data[:event_type],
@@ -76,21 +76,39 @@ module SentEmails
           to: email.primary_recipient,
           occurred_at: event.occurred_at
         })
+      rescue => e
+        Rails.logger.error(
+          "[SentEmails] Error notifying subscribers for message #{event&.id || "unknown"}: #{e.class}: #{e.message}"
+        )
       end
 
-      # Scrub PII from webhook event payloads for redacted emails
+      REDACTED_KEYS = %w[
+        to from to_address from_address email recipient sender
+        subject htmlbody textbody
+      ].freeze
+
+      # Scrub PII from webhook event payloads for redacted emails.
+      # Recursively walks hashes/arrays with case-insensitive key matching
+      # to handle provider-specific casing (e.g. Postmark capitalises keys).
       def redact_event_payload(payload, _email)
-        return payload unless payload.is_a?(Hash)
-        redacted = "[REDACTED]"
-        scrubbed = payload.deep_dup
-        %w[to from to_address from_address email recipient sender subject htmlbody textbody].each do |key|
-          scrubbed[key] = redacted if scrubbed.key?(key)
-          # Also check nested payload hash (MailPace nests under "payload")
-          if scrubbed["payload"].is_a?(Hash) && scrubbed["payload"].key?(key)
-            scrubbed["payload"][key] = redacted
+        redact_value(payload)
+      end
+
+      def redact_value(value)
+        case value
+        when Hash
+          value.each_with_object({}) do |(key, v), result|
+            if REDACTED_KEYS.include?(key.to_s.downcase)
+              result[key] = "[REDACTED]"
+            else
+              result[key] = redact_value(v)
+            end
           end
+        when Array
+          value.map { |v| redact_value(v) }
+        else
+          value
         end
-        scrubbed
       end
 
       def find_email(message_id)

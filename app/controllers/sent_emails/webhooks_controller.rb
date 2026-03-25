@@ -64,11 +64,11 @@ module SentEmails
       @provider_class ||= case params[:provider]&.downcase
       when "mailpace"
         Providers::Mailpace
+      when "postmark"
+        Providers::Postmark
         # Future providers:
         # when "sendgrid"
         #   Providers::Sendgrid
-        # when "postmark"
-        #   Providers::Postmark
       end
     end
 

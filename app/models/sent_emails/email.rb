@@ -223,6 +223,14 @@ module SentEmails
       provider&.titleize || delivery_method&.titleize || "Unknown"
     end
 
+    # Check if any key field has been redacted by content filters
+    def redacted?
+      sentinel = "[REDACTED]"
+      from_address == sentinel ||
+        subject == sentinel ||
+        to_addresses&.include?(sentinel)
+    end
+
     # Check if email is archived
     def archived?
       archived_at.present?
