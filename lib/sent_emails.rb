@@ -180,7 +180,8 @@ module SentEmails
       configuration.content_filters.each do |filter|
         filter.call(attrs)
       rescue => e
-        Rails.logger.error("[SentEmails] Content filter error: #{e.message}")
+        Rails.logger.error("[SentEmails] Content filter error (#{e.class}): #{e.message}")
+        Rails.logger.error(e.backtrace.join("\n")) if e.backtrace
       end
       attrs
     end

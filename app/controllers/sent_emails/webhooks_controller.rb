@@ -83,6 +83,8 @@ module SentEmails
       @provider_class ||= case provider_name
       when "mailpace"
         Providers::Mailpace
+      when "postmark"
+        Providers::Postmark
       end
     end
 

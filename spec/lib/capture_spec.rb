@@ -97,6 +97,69 @@ RSpec.describe SentEmails::Capture do
       expect(email.provider).to eq("mailpace")
     end
 
+    context "with content filters" do
+      after do
+        SentEmails.configuration.content_filters.clear
+      end
+
+      it "applies content filters before persistence" do
+        SentEmails.configure do |config|
+          config.content_filter do |attrs|
+            attrs[:subject] = "[REDACTED]"
+            attrs[:text_body] = "[REDACTED]"
+            attrs[:html_body] = "[REDACTED]"
+          end
+        end
+
+        email = capture_email
+        expect(email.subject).to eq("[REDACTED]")
+      end
+
+      it "supports _skip_attachments flag without raising" do
+        msg = Mail.new do
+          from "sender@example.com"
+          to "recipient@example.com"
+          subject "Test"
+          body "Test body"
+          message_id "<skip-attach@example.com>"
+        end
+        msg.add_file(filename: "test.txt", content: "test content")
+
+        SentEmails.configure do |config|
+          config.content_filter do |attrs|
+            attrs[:_skip_attachments] = true
+          end
+        end
+
+        email = capture_email(msg)
+        expect(email.attachments.count).to eq(0)
+      end
+
+      it "captures attachments when _skip_attachments is not set" do
+        msg = Mail.new do
+          from "sender@example.com"
+          to "recipient@example.com"
+          subject "Test"
+          body "Test body"
+          message_id "<with-attach@example.com>"
+        end
+        msg.add_file(filename: "test.txt", content: "test content")
+
+        email = capture_email(msg)
+        expect(email.attachments.count).to eq(1)
+      end
+
+      it "continues processing when a filter raises" do
+        SentEmails.configure do |config|
+          config.content_filter { |_| raise "boom" }
+          config.content_filter { |attrs| attrs[:subject] = "[FILTERED]" }
+        end
+
+        email = capture_email
+        expect(email.subject).to eq("[FILTERED]")
+      end
+    end
+
     context "with attachments" do
       it "captures attachments" do
         msg = Mail.new do
