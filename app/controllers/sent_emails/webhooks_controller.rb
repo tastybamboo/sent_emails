@@ -6,6 +6,7 @@ module SentEmails
     skip_before_action :verify_authenticity_token
     skip_before_action :authenticate!
 
+    before_action :capture_raw_body
     before_action :verify_provider
     before_action :build_provider
     before_action :verify_signature
@@ -14,9 +15,9 @@ module SentEmails
       events = @provider.process!
 
       if events.any?
-        Rails.logger.info("[SentEmails] Processed #{events.size} event(s) from #{params[:provider]}")
+        Rails.logger.info("[SentEmails] Processed #{events.size} event(s) from #{provider_name}")
       else
-        Rails.logger.info("[SentEmails] No matching emails found for webhook from #{params[:provider]}")
+        Rails.logger.info("[SentEmails] No matching emails found for webhook from #{provider_name}")
       end
 
       head :ok
@@ -30,27 +31,35 @@ module SentEmails
 
     def verify_provider
       unless provider_class
-        Rails.logger.warn("[SentEmails] Unknown provider: #{params[:provider]}")
+        Rails.logger.warn("[SentEmails] Unknown provider: #{provider_name}")
         head :not_found
       end
     end
 
-    def build_provider
-      # Capture the raw body before accessing params — params parsing consumes
-      # the rack.input stream, which can leave request.raw_post empty when
-      # Content-Length is absent (e.g. chunked transfer encoding).
-      raw = request.raw_post.presence || request.body.read.tap { request.body.rewind }
+    # Capture the raw body before anything else accesses params — params
+    # parsing consumes the rack.input stream, which can leave
+    # request.raw_post empty when Content-Length is absent (chunked transfer).
+    def capture_raw_body
+      @raw_body = request.raw_post.presence
+      @raw_body ||= begin
+        request.body.rewind if request.body.respond_to?(:rewind)
+        body = request.body.read
+        request.body.rewind if request.body.respond_to?(:rewind)
+        body
+      end
+    end
 
+    def build_provider
       @provider = provider_class.new(
         payload: webhook_params,
         headers: request.headers.to_h,
-        raw_body: raw
+        raw_body: @raw_body
       )
     end
 
     def verify_signature
       unless @provider.valid_signature?
-        Rails.logger.warn("[SentEmails] Invalid signature for #{params[:provider]} webhook")
+        Rails.logger.warn("[SentEmails] Invalid signature for #{provider_name} webhook")
         notify_signature_failure
         head :unauthorized
       end
@@ -60,20 +69,20 @@ module SentEmails
       callback = SentEmails.configuration.on_signature_failure
       return unless callback
 
-      callback.call(params[:provider], request)
+      callback.call(provider_name, request)
     rescue => e
       Rails.logger.error("[SentEmails] on_signature_failure callback error: #{e.message}")
     end
 
+    # Use path_parameters to avoid triggering body parsing from params
+    def provider_name
+      request.path_parameters[:provider]&.downcase
+    end
+
     def provider_class
-      @provider_class ||= case params[:provider]&.downcase
+      @provider_class ||= case provider_name
       when "mailpace"
         Providers::Mailpace
-        # Future providers:
-        # when "sendgrid"
-        #   Providers::Sendgrid
-        # when "postmark"
-        #   Providers::Postmark
       end
     end
 
