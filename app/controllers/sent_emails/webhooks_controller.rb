@@ -36,10 +36,15 @@ module SentEmails
     end
 
     def build_provider
+      # Capture the raw body before accessing params — params parsing consumes
+      # the rack.input stream, which can leave request.raw_post empty when
+      # Content-Length is absent (e.g. chunked transfer encoding).
+      raw = request.raw_post.presence || request.body.read.tap { request.body.rewind }
+
       @provider = provider_class.new(
         payload: webhook_params,
         headers: request.headers.to_h,
-        raw_body: request.raw_post
+        raw_body: raw
       )
     end
 
