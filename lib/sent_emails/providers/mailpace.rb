@@ -19,10 +19,10 @@ module SentEmails
         signature = headers["X-MailPace-Signature"] || headers["HTTP_X_MAILPACE_SIGNATURE"]
         return false if signature.blank?
 
-        public_key_hex = provider_config[:public_key]
-        return false if public_key_hex.blank?
+        public_key = provider_config[:public_key]
+        return false if public_key.blank?
 
-        verify_ed25519_signature(signature, public_key_hex)
+        verify_ed25519_signature(signature, public_key)
       end
 
       def events
@@ -43,9 +43,9 @@ module SentEmails
         SentEmails.provider_config(:mailpace)
       end
 
-      def verify_ed25519_signature(signature_hex, public_key_value)
+      def verify_ed25519_signature(signature, public_key_value)
         verify_key = Ed25519::VerifyKey.new(decode_key(public_key_value))
-        signature_bytes = [signature_hex].pack("H*")
+        signature_bytes = decode_signature(signature)
 
         # Mailpace signs the raw request body
         verify_key.verify(signature_bytes, raw_body)
@@ -59,6 +59,25 @@ module SentEmails
       # Hex keys are 64 characters of [0-9a-fA-F]; everything else is treated as base64.
       def decode_key(value)
         if value.match?(/\A[0-9a-fA-F]{64}\z/)
+          [value].pack("H*")
+        else
+          Base64.strict_decode64(value)
+        end
+      end
+
+      # Decode an Ed25519 signature from either hex or base64 encoding.
+      #
+      # Mailpace sends signatures as base64 per their webhook docs:
+      # https://docs.mailpace.com/guide/webhooks
+      #
+      # A valid Ed25519 signature is always 64 bytes:
+      # - Hex encoded: 128 characters of [0-9a-fA-F]
+      # - Base64 encoded (strict): 88 characters, ending with "=="
+      #
+      # Hex support is preserved for backwards compatibility with tests and
+      # any callers that may pre-encode in hex.
+      def decode_signature(value)
+        if value.match?(/\A[0-9a-fA-F]{128}\z/)
           [value].pack("H*")
         else
           Base64.strict_decode64(value)
