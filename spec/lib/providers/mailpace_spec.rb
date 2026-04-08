@@ -69,6 +69,30 @@ RSpec.describe SentEmails::Providers::Mailpace do
         expect(provider.valid_signature?).to be true
       end
     end
+
+    context "with base64-encoded signature (Mailpace's actual wire format)" do
+      # Per https://docs.mailpace.com/guide/webhooks, Mailpace encodes the
+      # webhook signature as base64, not hex. This spec guards against the
+      # regression where verification only accepted hex.
+      let(:signature) do
+        signing_key = Ed25519::SigningKey.new([private_key_hex].pack("H*"))
+        Base64.strict_encode64(signing_key.sign(raw_body))
+      end
+
+      it "returns true for valid signature" do
+        provider = build_provider
+        expect(provider.valid_signature?).to be true
+      end
+
+      it "returns false for a base64 signature of the wrong body" do
+        signing_key = Ed25519::SigningKey.new([private_key_hex].pack("H*"))
+        tampered_body = raw_body + "x"
+        bad_signature = Base64.strict_encode64(signing_key.sign(tampered_body))
+        bad_headers = {"X-MailPace-Signature" => bad_signature}
+        provider = build_provider(payload, bad_headers, raw_body)
+        expect(provider.valid_signature?).to be false
+      end
+    end
   end
 
   describe "#events" do
