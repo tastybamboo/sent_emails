@@ -28,3 +28,8 @@ if Gem::Version.new(rails_version) < Gem::Version.new("7.1")
 else
   gem "sqlite3"
 end
+
+# Postgres-specific scopes (Email.to, Email.search) only run against the
+# `using_postgresql?` branch when the dummy app is configured to use it —
+# see spec/dummy/config/database.yml and DB=postgresql in CI.
+gem "pg", "~> 1.5"

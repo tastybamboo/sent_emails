@@ -51,7 +51,14 @@ module SentEmails
     scope :by_status, ->(status) { where(status: status) }
     scope :search, ->(query) {
       if using_postgresql?
-        where("subject ILIKE :q OR :q = ANY(to_addresses)", q: "%#{query}%")
+        # to_addresses is a `json` column (portable across adapters), not a native
+        # Postgres array, so array operators like ANY() don't apply to it. Cast to
+        # jsonb and use the `@>` containment operator to check for an exact string
+        # match against a top-level JSON array element. (The jsonb `?` operator
+        # would read more naturally here, but ActiveRecord's bind-variable counting
+        # treats every `?` in the SQL fragment as a placeholder — including ones
+        # escaped as `??` — so it can't be used safely in a `where` string.)
+        where("subject ILIKE ? OR to_addresses::jsonb @> ?::jsonb", "%#{query}%", [query].to_json)
       else
         pattern = "%#{query}%"
         where("subject LIKE ?", pattern)
@@ -62,7 +69,9 @@ module SentEmails
     # Find by recipient email address
     scope :to, ->(email) {
       if using_postgresql?
-        where("? = ANY(to_addresses)", email)
+        # See the comment in `search` above: to_addresses is `json`, not a native
+        # array, so use the jsonb `@>` containment operator instead of ANY().
+        where("to_addresses::jsonb @> ?::jsonb", [email].to_json)
       else
         where("to_addresses LIKE ?", "%#{email}%")
       end
