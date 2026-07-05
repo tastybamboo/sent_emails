@@ -1,4 +1,13 @@
+<% if ENV["DB"] == "postgresql" %>
+test:
+  adapter: postgresql
+  database: sent_emails_test
+  host: <%= ENV.fetch("POSTGRES_HOST", "localhost") %>
+  username: <%= ENV.fetch("POSTGRES_USER", "postgres") %>
+  password: <%= ENV.fetch("POSTGRES_PASSWORD", "postgres") %>
+<% else %>
 test:
   adapter: sqlite3
   database: ":memory:"
   timeout: 5000
+<% end %>
