@@ -9,6 +9,7 @@ require_relative "sent_emails/request_middleware"
 require_relative "sent_emails/providers/base"
 require_relative "sent_emails/providers/mailpace"
 require_relative "sent_emails/providers/postmark"
+require_relative "sent_emails/providers/mailgun"
 require_relative "sent_emails/test_helpers"
 
 # SentEmails is a Rails engine that captures sent emails with full content,
