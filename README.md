@@ -7,7 +7,7 @@ A Rails engine that captures sent emails with full content, tracks delivery stat
 - **Full email capture** - Subject, body (text/HTML), headers, attachments
 - **Rails context** - Mailer class, action name, template path, parameters passed
 - **Delivery details** - Provider used, delivery method, SMTP settings
-- **Delivery tracking** - Webhook integration with Mailpace (more providers coming)
+- **Delivery tracking** - Webhook integration with Mailpace and Mailgun (more providers coming)
 - **Event timeline** - See queued, delivered, bounced, and other events
 - **Resend emails** - One-click resend from the UI
 - **Standalone UI** - Self-contained Tailwind CSS admin panel
@@ -254,6 +254,7 @@ https://yourapp.com/webhooks/sent_emails/mailpace
 ### Currently Supported
 
 - **Mailpace** - Ed25519 signature verification
+- **Mailgun** - HMAC-SHA256 signature verification
 
 ### Planned
 

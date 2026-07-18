@@ -85,6 +85,8 @@ module SentEmails
         Providers::Mailpace
       when "postmark"
         Providers::Postmark
+      when "mailgun"
+        Providers::Mailgun
       end
     end
 

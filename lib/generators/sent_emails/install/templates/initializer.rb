@@ -64,6 +64,12 @@ SentEmails.configure do |config|
   #   p.webhook_token = Rails.application.credentials.dig(:postmark, :webhook_token)
   # end
 
+  # Mailgun signs the webhook body with an HMAC signing key
+  # Get your signing key from: Sending > Webhooks > HTTP webhook signing key
+  # config.provider :mailgun do |p|
+  #   p.signing_key = Rails.application.credentials.dig(:mailgun, :signing_key)
+  # end
+
   # Optional: callback invoked when a webhook signature fails verification.
   # Receives the provider name (String) and the ActionDispatch::Request.
   # Use this to report failures to your error tracking service.

@@ -67,6 +67,7 @@ module SentEmails
     attr_accessor :public_key,        # Mailpace Ed25519 public key
       :verification_key,              # SendGrid verification key
       :webhook_token,                 # Postmark webhook token
+      :signing_key,                   # Mailgun HTTP webhook signing key
       :enabled
 
     def initialize
@@ -78,6 +79,7 @@ module SentEmails
         public_key: @public_key,
         verification_key: @verification_key,
         webhook_token: @webhook_token,
+        signing_key: @signing_key,
         enabled: @enabled
       }.compact
     end
