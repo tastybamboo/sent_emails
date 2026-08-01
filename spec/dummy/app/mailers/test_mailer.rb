@@ -15,4 +15,9 @@ class TestMailer < ActionMailer::Base
     @message = message
     mail(to: user_email, subject: "Notification: #{message}")
   end
+
+  # Parameterless mailer used by request specs for resend flows
+  def simple_notification
+    mail(to: "test@example.com", subject: "Simple notification")
+  end
 end

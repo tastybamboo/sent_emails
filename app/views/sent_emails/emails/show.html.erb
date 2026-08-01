@@ -73,13 +73,13 @@
               <dt class="text-sm font-medium text-gray-500">To</dt>
               <dd class="mt-1 text-sm text-gray-900"><%= @email.to_addresses.join(", ") %></dd>
             </div>
-            <% if @email.cc_addresses.any? %>
+            <% if @email.cc_addresses&.any? %>
               <div>
                 <dt class="text-sm font-medium text-gray-500">CC</dt>
                 <dd class="mt-1 text-sm text-gray-900"><%= @email.cc_addresses.join(", ") %></dd>
               </div>
             <% end %>
-            <% if @email.bcc_addresses.any? %>
+            <% if @email.bcc_addresses&.any? %>
               <div>
                 <dt class="text-sm font-medium text-gray-500">BCC</dt>
                 <dd class="mt-1 text-sm text-gray-900"><%= @email.bcc_addresses.join(", ") %></dd>

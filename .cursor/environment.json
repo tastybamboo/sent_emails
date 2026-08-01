@@ -1,0 +1,10 @@
+{
+  "name": "sent-emails",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "install": "bundle install",
+  "start": "sudo service postgresql start",
+  "agentCanUpdateSnapshot": true
+}
