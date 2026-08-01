@@ -5,5 +5,6 @@
     "context": ".."
   },
   "install": "bundle install",
-  "start": "sudo service postgresql start"
+  "start": "sudo service postgresql start",
+  "agentCanUpdateSnapshot": true
 }
