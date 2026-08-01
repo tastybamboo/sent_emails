@@ -16,7 +16,13 @@ if Gem::Version.new(rails_version) >= Gem::Version.new("7.2")
 else
   gem "rspec-rails", "~> 7.0"
 end
-gem "shoulda-matchers", "~> 8.0"
+
+# shoulda-matchers 8.x requires Ruby >= 3.3
+if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new("3.3")
+  gem "shoulda-matchers", "~> 8.0"
+else
+  gem "shoulda-matchers", "~> 6.0"
+end
 
 # Linting
 gem "standard", require: false
