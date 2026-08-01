@@ -85,6 +85,18 @@ module SpecHelpers
       "event-data" => build_mailgun_event_data(message_id: message_id, event: event, timestamp: timestamp, **options)
     }
   end
+
+  def create_email(attrs = {})
+    defaults = {
+      from_address: "noreply@example.com",
+      to_addresses: ["user@example.com"],
+      cc_addresses: [],
+      bcc_addresses: [],
+      mailer_params: {},
+      status: "sent"
+    }
+    SentEmails::Email.create!(defaults.merge(attrs))
+  end
 end
 
 RSpec.configure do |config|

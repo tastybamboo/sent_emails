@@ -210,15 +210,4 @@ RSpec.describe SentEmails::Email, type: :model do
       expect(email.archived_at).to be_nil
     end
   end
-
-  private
-
-  def create_email(attrs = {})
-    defaults = {
-      from_address: "noreply@example.com",
-      to_addresses: ["user@example.com"],
-      status: "sent"
-    }
-    SentEmails::Email.create!(defaults.merge(attrs))
-  end
 end

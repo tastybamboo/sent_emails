@@ -4,7 +4,7 @@ source "https://rubygems.org"
 
 gemspec
 
-rails_version = ENV.fetch("RAILS_VERSION", "7.2")
+rails_version = ENV.fetch("RAILS_VERSION", "8.1")
 gem "rails", "~> #{rails_version}.0"
 
 gem "irb"
@@ -16,7 +16,7 @@ if Gem::Version.new(rails_version) >= Gem::Version.new("7.2")
 else
   gem "rspec-rails", "~> 7.0"
 end
-gem "shoulda-matchers", "~> 6.0"
+gem "shoulda-matchers", "~> 8.0"
 
 # Linting
 gem "standard", require: false
@@ -32,4 +32,4 @@ end
 # Postgres-specific scopes (Email.to, Email.search) only run against the
 # `using_postgresql?` branch when the dummy app is configured to use it —
 # see spec/dummy/config/database.yml and DB=postgresql in CI.
-gem "pg", "~> 1.5"
+gem "pg", "~> 1.6"
