@@ -1,6 +1,6 @@
 # Cloud agent base image for the sent_emails gem.
 # Do not COPY the project — Cursor checks out the correct commit into the workspace.
-FROM ruby:3.3.8-bookworm
+FROM ruby:4.0.6-bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive \
     LANG=C.UTF-8 \
