@@ -86,6 +86,52 @@ module SpecHelpers
     }
   end
 
+  # SendGrid helpers
+  def build_sendgrid_event(message_id:, event: "delivered", timestamp: Time.current.to_i, **options)
+    event_data = {
+      "email" => options[:email] || "recipient@example.com",
+      "timestamp" => timestamp,
+      "event" => event,
+      "sg_event_id" => SecureRandom.urlsafe_base64(16),
+      "sg_message_id" => "#{SecureRandom.hex(12)}.filter0001.16648.0",
+      "smtp-id" => "<#{message_id}>"
+    }
+    event_data["type"] = options[:bounce_type] if options[:bounce_type]
+    event_data["unique_args"] = options[:unique_args] if options[:unique_args]
+    event_data["custom_args"] = options[:custom_args] if options[:custom_args]
+    event_data.delete("smtp-id") if options[:omit_smtp_id]
+    event_data["message_id"] = options[:explicit_message_id] if options.key?(:explicit_message_id)
+    event_data
+  end
+
+  def build_sendgrid_webhook_payload(message_id:, event: "delivered", timestamp: Time.current.to_i, **options)
+    [build_sendgrid_event(message_id: message_id, event: event, timestamp: timestamp, **options)]
+  end
+
+  def generate_sendgrid_ecdsa_keypair
+    require "openssl"
+    require "base64"
+    key = OpenSSL::PKey::EC.generate("prime256v1")
+    verification_key = Base64.strict_encode64(key.public_to_pem)
+    [key, verification_key]
+  end
+
+  def sign_sendgrid_payload(private_key, payload_json, timestamp:)
+    require "openssl"
+    require "base64"
+    require "digest"
+    digest = Digest::SHA256.digest("#{timestamp}#{payload_json}")
+    Base64.strict_encode64(private_key.dsa_sign_asn1(digest))
+  end
+
+  def sendgrid_signature_headers(private_key, payload_json, timestamp: Time.current.to_i.to_s)
+    {
+      "CONTENT_TYPE" => "application/json",
+      "X-Twilio-Email-Event-Webhook-Signature" => sign_sendgrid_payload(private_key, payload_json, timestamp: timestamp),
+      "X-Twilio-Email-Event-Webhook-Timestamp" => timestamp
+    }
+  end
+
   def create_email(attrs = {})
     defaults = {
       from_address: "noreply@example.com",
