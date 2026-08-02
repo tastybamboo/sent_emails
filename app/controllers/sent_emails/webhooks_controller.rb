@@ -87,6 +87,8 @@ module SentEmails
         Providers::Postmark
       when "mailgun"
         Providers::Mailgun
+      when "sendgrid"
+        Providers::Sendgrid
       end
     end
 

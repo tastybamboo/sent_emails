@@ -54,9 +54,10 @@ SentEmails.configure do |config|
   #   p.public_key = Rails.application.credentials.dig(:mailpace, :webhook_public_key)
   # end
 
-  # SendGrid uses a verification key
+  # SendGrid signs Event Webhook requests with ECDSA (verification key)
+  # Enable "Signed Event Webhook" under Settings > Mail Settings > Event Webhooks
   # config.provider :sendgrid do |p|
-  #   p.verification_key = ENV["SENDGRID_WEBHOOK_VERIFICATION_KEY"]
+  #   p.verification_key = Rails.application.credentials.dig(:sendgrid, :webhook_verification_key)
   # end
 
   # Postmark uses a webhook token

@@ -7,7 +7,7 @@ A Rails engine that captures sent emails with full content, tracks delivery stat
 - **Full email capture** - Subject, body (text/HTML), headers, attachments
 - **Rails context** - Mailer class, action name, template path, parameters passed
 - **Delivery details** - Provider used, delivery method, SMTP settings
-- **Delivery tracking** - Webhook integration with Mailpace and Mailgun (more providers coming)
+- **Delivery tracking** - Webhook integration with Mailpace, Mailgun, and SendGrid (more providers coming)
 - **Event timeline** - See queued, delivered, bounced, and other events
 - **Resend emails** - One-click resend from the UI
 - **Standalone UI** - Self-contained Tailwind CSS admin panel
@@ -127,6 +127,55 @@ Or if you've mounted webhooks separately (see [Separate Webhook Path](#separate-
 ```
 https://yourapp.com/webhooks/sent_emails/mailpace
 ```
+
+### Configure Webhook Provider (SendGrid)
+
+To receive SendGrid delivery status updates, enable **Signed Event Webhook** and configure the verification key:
+
+```ruby
+SentEmails.configure do |config|
+  config.provider :sendgrid do |p|
+    p.verification_key = Rails.application.credentials.dig(:sendgrid, :webhook_verification_key)
+  end
+end
+```
+
+#### Getting Your Verification Key
+
+1. Log in to [SendGrid](https://app.sendgrid.com)
+2. Go to **Settings** → **Mail Settings** → **Event Webhooks**
+3. Create or edit a webhook, enable **Signed Event Webhook**, and save
+4. Copy the **Verification Key** and add it to your Rails credentials
+
+#### Configuring the Webhook URL in SendGrid
+
+```
+https://yourapp.com/admin/sent_emails/webhooks/sendgrid
+```
+
+Or with a separate webhook mount:
+
+```
+https://yourapp.com/webhooks/sent_emails/sendgrid
+```
+
+#### Webhook Events
+
+SendGrid sends batched event arrays which are automatically processed:
+
+| SendGrid Event | SentEmails Status |
+|----------------|-------------------|
+| `processed` | `sent` |
+| `delivered` | `delivered` |
+| `deferred` | `deferred` |
+| `bounce` | `bounced` (`soft_bounced` when `type` is `blocked`) |
+| `dropped` | `rejected` |
+| `open` | `opened` |
+| `click` | `clicked` |
+| `spamreport` | `spam` |
+| `unsubscribe` / `group_unsubscribe` | `unsubscribed` |
+
+Events are matched to captured emails via the `smtp-id` field (the email Message-ID).
 
 #### Signature Failure Reporting
 
@@ -255,11 +304,11 @@ https://yourapp.com/webhooks/sent_emails/mailpace
 
 - **Mailpace** - Ed25519 signature verification
 - **Mailgun** - HMAC-SHA256 signature verification
+- **SendGrid** - ECDSA (Signed Event Webhook) signature verification
+- **Postmark** - HMAC-SHA256 signature verification
 
 ### Planned
 
-- SendGrid
-- Postmark
 - Amazon SES
 
 ## Development

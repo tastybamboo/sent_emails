@@ -114,4 +114,57 @@ RSpec.describe "Webhook signature verification", type: :request do
       expect(response).to have_http_status(:unauthorized)
     end
   end
+
+  context "with a sendgrid webhook" do
+    let(:keypair) { generate_sendgrid_ecdsa_keypair }
+    let(:private_key) { keypair[0] }
+    let(:verification_key) { keypair[1] }
+
+    let(:sendgrid_payload) do
+      build_sendgrid_webhook_payload(
+        message_id: "test-message-id",
+        event: "delivered"
+      )
+    end
+
+    let(:sendgrid_raw_body) { sendgrid_payload.to_json }
+    let(:sendgrid_headers) { sendgrid_signature_headers(private_key, sendgrid_raw_body) }
+
+    before do
+      SentEmails.configure do |config|
+        config.provider :sendgrid do |p|
+          p.verification_key = verification_key
+        end
+      end
+    end
+
+    it "returns ok and creates an event for a validly signed sendgrid webhook" do
+      SentEmails::Email.create!(
+        from_address: "test@example.com",
+        to_addresses: ["recipient@example.com"],
+        message_id: "test-message-id",
+        status: "sent"
+      )
+
+      expect {
+        post "/admin/sent_emails/webhooks/sendgrid",
+          params: sendgrid_raw_body,
+          headers: sendgrid_headers
+      }.to change(SentEmails::Event, :count).by(1)
+
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "returns unauthorized for an invalid signature" do
+      bad_headers = sendgrid_headers.merge(
+        "X-Twilio-Email-Event-Webhook-Signature" => Base64.strict_encode64("bad-signature")
+      )
+
+      post "/admin/sent_emails/webhooks/sendgrid",
+        params: sendgrid_raw_body,
+        headers: bad_headers
+
+      expect(response).to have_http_status(:unauthorized)
+    end
+  end
 end

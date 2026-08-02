@@ -54,7 +54,7 @@ module SentEmails
     #   end
     #
     #   config.provider :sendgrid do |p|
-    #     p.verification_key = ENV["SENDGRID_WEBHOOK_VERIFICATION_KEY"]
+    #     p.verification_key = Rails.application.credentials.dig(:sendgrid, :webhook_verification_key)
     #   end
     def provider(name, &block)
       provider_config = ProviderConfig.new
